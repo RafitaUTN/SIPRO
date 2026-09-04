@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self';">
+  <title>SIPRO | Panel de control</title>
+  <link rel="icon" type="image/png" href="../assets/logo hotel.png">
+  <link href="../css/vendor.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/panelPrincipal.css">
+</head>
+<body>
+  <aside class="app-sidebar" aria-label="Navegación principal">
+    <div class="sidebar-identity"><img class="identity-logo" src="../assets/logo hotel.png" alt="Hotel El Silencio del Campo"><div><strong>Hotel El Silencio</strong><small>Sistema de inventario</small></div></div>
+    <div class="sidebar-heading">Menú principal</div>
+    <nav class="sidebar-nav">
+      <button class="sidebar-link active" data-view="dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Panel de control</span></button>
+      <button class="sidebar-link" data-view="productos.html"><i data-lucide="package" aria-hidden="true"></i><span>Productos</span></button>
+      <button class="sidebar-link" data-view="usuarios.html" data-permission="usuarios:read"><i data-lucide="users" aria-hidden="true"></i><span>Usuarios</span></button>
+      <button class="sidebar-link" data-view="registro.html"><i data-lucide="arrow-left-right" aria-hidden="true"></i><span>Movimientos</span></button>
+      <button class="sidebar-link" data-view="reportes"><i data-lucide="file-chart-column" aria-hidden="true"></i><span>Reportes</span></button>
+    </nav>
+    <div class="sidebar-account"><div class="account-avatar" id="accountAvatar">--</div><div class="account-copy"><strong id="accountName">Usuario</strong><small id="accountRole">Sesión activa</small></div></div>
+    <button class="sidebar-link sidebar-logout" id="logoutButton"><i data-lucide="log-out" aria-hidden="true"></i><span>Cerrar sesión</span></button>
+  </aside>
+  <div class="app-frame">
+    <header class="app-topbar"><div><span class="eyebrow" id="viewEyebrow">Resumen</span><h1 id="viewTitle">Panel de control</h1></div><div class="connection-state" id="connectionState"><span></span> Comprobando conexión</div></header>
+    <main id="appContent" class="page-content dashboard-background" tabindex="-1">
+      <section class="dashboard-view">
+        <div class="page-intro"><div><h2>Resumen general del inventario</h2><p>Estado actual del inventario del Hotel El Silencio del Campo.</p></div><span class="date-label" id="currentDate"></span></div>
+        <div class="stats-grid">
+          <article class="metric-card"><div class="metric-icon green"><i data-lucide="package" aria-hidden="true"></i></div><div><span>Total de productos</span><strong id="totalProductos">--</strong></div></article>
+          <article class="metric-card"><div class="metric-icon terracotta"><i data-lucide="users" aria-hidden="true"></i></div><div><span>Usuarios activos</span><strong id="totalUsuarios">--</strong></div></article>
+          <article class="metric-card"><div class="metric-icon mustard"><i data-lucide="triangle-alert" aria-hidden="true"></i></div><div><span>Stock bajo</span><strong id="stockBajo">--</strong></div></article>
+          <article class="metric-card"><div class="metric-icon blue"><i data-lucide="arrow-left-right" aria-hidden="true"></i></div><div><span>Movimientos de hoy</span><strong id="totalMovimientos">--</strong></div></article>
+        </div>
+        <div class="dashboard-columns"><section class="surface-card"><div class="section-heading"><div><span class="eyebrow">Accesos</span><h2>Acceso rápido</h2></div></div><div class="quick-grid"><button class="quick-card" data-view="productos.html"><i data-lucide="package" aria-hidden="true"></i><strong>Productos</strong><span>Administra el inventario</span></button><button class="quick-card" data-view="usuarios.html" data-permission="usuarios:read"><i data-lucide="users" aria-hidden="true"></i><strong>Usuarios</strong><span>Gestiona accesos y roles</span></button><button class="quick-card" data-view="registro.html"><i data-lucide="arrow-left-right" aria-hidden="true"></i><strong>Movimientos</strong><span>Consulta entradas y salidas</span></button><button class="quick-card" data-view="reportes"><i data-lucide="file-chart-column" aria-hidden="true"></i><strong>Reportes</strong><span>Exporta información útil</span></button></div></section><section class="surface-card recent-card"><div class="section-heading"><div><span class="eyebrow">Últimos registros</span><h2>Actividad reciente</h2></div><button class="text-button" data-view="registro.html">Ver todos</button></div><div id="recentActivity" class="recent-list"><div class="empty-state">Cargando actividad...</div></div></section></div>
+      </section>
+    </main>
+  </div>
+  <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+  <script src="../js/vendor/bootstrap.js"></script>
+  <script src="../helpers/notificaciones.js"></script>
+  <script src="../../node_modules/lucide/dist/umd/lucide.min.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/appShell.js"></script>
+</body>
+</html>

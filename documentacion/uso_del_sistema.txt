@@ -1,0 +1,81 @@
+DOCUMENTACIÓN DE USO DEL SISTEMA
+===============================
+
+Este sistema es una aplicación web construida con Node.js, PostgreSQL y Bootstrap para la gestión de usuarios, productos y movimientos de stock, con historial de operaciones y exportación a Excel.
+
+FUNCIONALIDADES PRINCIPALES
+1. Login
+
+Ingresar con correo y contraseña registrados en la base de datos app.usuarios.
+
+El sistema valida los usuarios contra la tabla PostgreSQL.
+
+Roles de usuario: usuario y superadmin. El superadmin tiene acceso completo al sistema.
+
+2. Panel Principal
+
+Acceso a CRUD de productos y usuarios.
+
+Acceso a registro de movimientos de stock (entradas y salidas).
+
+Botón para generar reporte Excel de productos y movimientos de stock.
+
+3. CRUD de Productos
+
+Registrar un nuevo producto con código de barra, nombre, precio, stock y categoría.
+
+Actualizar datos del producto existente.
+
+Búsqueda y filtrado en tiempo real por nombre, código de barra o categoría.
+
+Edición y eliminación de productos:
+
+Los movimientos de stock se desvinculan automáticamente, de modo que el historial de entradas y salidas se conserva aunque el producto sea eliminado.
+
+Validaciones:
+
+El stock no puede ser negativo.
+
+El precio no puede ser menor a 0.
+
+Se debe seleccionar una categoría para el producto.
+
+4. CRUD de Usuarios
+
+Alta, edición y eliminación de usuarios.
+
+Filtrado en tiempo real por nombre o correo.
+
+Los cambios se reflejan en la base de datos PostgreSQL.
+
+5. Movimientos de Stock
+
+Cada vez que se modifique el stock de un producto, se registra automáticamente un movimiento en app.movimientos_stock.
+
+Tipos de movimiento: entrada o salida.
+
+Se guarda la cantidad y el nombre del producto en el momento de la operación, lo que permite mantener historial aunque el producto se elimine posteriormente.
+
+6. Exportar a Excel
+
+Desde el panel principal se puede generar un archivo Excel con:
+
+Productos actuales y su stock.
+
+Historial de movimientos de stock.
+
+Los archivos se guardan en la carpeta Descargas/archivos.
+
+REQUISITOS
+
+Tener Node.js y PostgreSQL instalados y configurados.
+
+Configurar variables de entorno para conexión a la base de datos (.env).
+
+Contar con la base de datos app creada con sus tablas usuarios, categorias, productos y movimientos_stock.
+
+SOPORTE
+
+Para dudas o problemas, contactar al desarrollador.
+
+Revisar la documentación técnica incluida en la carpeta documentacion.

@@ -1,0 +1,285 @@
+CREATE SCHEMA app AUTHORIZATION postgres;
+
+CREATE SCHEMA IF NOT EXISTS app;
+
+CREATE TABLE app.usuarios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE app.categorias (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE app.productos (
+    id SERIAL PRIMARY KEY,
+    codigodebarra VARCHAR(100) UNIQUE NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    precio NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
+    categoria_id INT NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (categoria_id) REFERENCES app.categorias(id)
+);
+
+ALTER TABLE app.productos
+ADD COLUMN stock INT DEFAULT 0 NOT NULL;
+
+INSERT INTO app.categorias (nombre) VALUES
+('Abarrotes'),
+('Productos de Limpieza'),
+('Productos de Lavandería'),
+('Frutas Congeladas'),
+('Carne'),
+('Pollo'),
+('Cerdo'),
+('Pescado o Mariscos'),
+('Cervezas'),
+('Vinos'),
+('Gaseosas'),
+('Lácteos');
+
+Select * from app.categorias
+
+Select * from app.usuarios;
+
+Select * from app.productos, app.categorias;
+
+INSERT INTO app.usuarios (nombre, email, password)
+VALUES ('Administrador', '<correo-obsoleto>', '<contraseña-no-almacenar>');
+
+ALTER TABLE app.usuarios
+ADD COLUMN rol VARCHAR(50) NOT NULL DEFAULT 'usuario';
+
+
+UPDATE app.usuarios
+SET rol = 'superadmin'
+WHERE email = '<correo-obsoleto>';
+
+
+CREATE TABLE app.movimientos_stock (
+    id SERIAL PRIMARY KEY,
+    producto_id INT NOT NULL,
+    tipo_movimiento VARCHAR(10) NOT NULL, -- 'entrada' o 'salida'
+    cantidad INT NOT NULL,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_producto
+        FOREIGN KEY(producto_id)
+        REFERENCES app.productos(id)
+);
+
+CREATE OR REPLACE FUNCTION log_movimiento_stock()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.stock > OLD.stock THEN
+        -- Entrada de stock
+        INSERT INTO app.movimientos_stock(producto_id, tipo_movimiento, cantidad)
+        VALUES (NEW.id, 'entrada', NEW.stock - OLD.stock);
+    ELSIF NEW.stock < OLD.stock THEN
+        -- Salida de stock
+        INSERT INTO app.movimientos_stock(producto_id, tipo_movimiento, cantidad)
+        VALUES (NEW.id, 'salida', OLD.stock - NEW.stock);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_movimiento_stock
+AFTER UPDATE OF stock ON app.productos
+FOR EACH ROW
+WHEN (OLD.stock IS DISTINCT FROM NEW.stock)
+EXECUTE FUNCTION log_movimiento_stock();
+
+select * from app.movimientos_stock
+
+ALTER TABLE app.movimientos_stock
+DROP COLUMN descripcion;
+
+ALTER TABLE app.movimientos_stock ALTER COLUMN producto_id DROP NOT NULL;
+
+CREATE SCHEMA app AUTHORIZATION postgres;
+
+CREATE SCHEMA IF NOT EXISTS app;
+
+CREATE TABLE app.usuarios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE app.categorias (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE app.productos (
+    id SERIAL PRIMARY KEY,
+    codigodebarra VARCHAR(100) UNIQUE NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    precio NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
+    categoria_id INT NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (categoria_id) REFERENCES app.categorias(id)
+);
+
+ALTER TABLE app.productos
+ADD COLUMN stock INT DEFAULT 0 NOT NULL;
+
+INSERT INTO app.categorias (nombre) VALUES
+('Abarrotes'),
+('Productos de Limpieza'),
+('Productos de Lavandería'),
+('Frutas Congeladas'),
+('Carne'),
+('Pollo'),
+('Cerdo'),
+('Pescado o Mariscos'),
+('Cervezas'),
+('Vinos'),
+('Gaseosas'),
+('Lácteos');
+
+INSERT INTO app.usuarios (nombre, email, password)
+VALUES ('Administrador', '<correo-obsoleto>', '<contraseña-no-almacenar>');
+
+ALTER TABLE app.usuarios
+ADD COLUMN rol VARCHAR(50) NOT NULL DEFAULT 'usuario';
+
+
+UPDATE app.usuarios
+SET rol = 'superadmin'
+WHERE email = '<correo-obsoleto>';
+
+
+CREATE TABLE app.movimientos_stock (
+    id SERIAL PRIMARY KEY,
+    producto_id INT NOT NULL,
+    tipo_movimiento VARCHAR(10) NOT NULL, -- 'entrada' o 'salida'
+    cantidad INT NOT NULL,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_producto
+        FOREIGN KEY(producto_id)
+        REFERENCES app.productos(id)
+);
+
+CREATE OR REPLACE FUNCTION log_movimiento_stock()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.stock > OLD.stock THEN
+        -- Entrada de stock
+        INSERT INTO app.movimientos_stock(producto_id, tipo_movimiento, cantidad)
+        VALUES (NEW.id, 'entrada', NEW.stock - OLD.stock);
+    ELSIF NEW.stock < OLD.stock THEN
+        -- Salida de stock
+        INSERT INTO app.movimientos_stock(producto_id, tipo_movimiento, cantidad)
+        VALUES (NEW.id, 'salida', OLD.stock - NEW.stock);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_movimiento_stock
+AFTER UPDATE OF stock ON app.productos
+FOR EACH ROW
+WHEN (OLD.stock IS DISTINCT FROM NEW.stock)
+EXECUTE FUNCTION log_movimiento_stock();
+
+select * from app.movimientos_stock
+
+ALTER TABLE app.movimientos_stock
+DROP COLUMN descripcion;
+
+ALTER TABLE app.movimientos_stock ALTER COLUMN producto_id DROP NOT NULL;
+
+ALTER TABLE app.movimientos_stock
+ADD COLUMN producto_nombre VARCHAR(150);
+
+CREATE TABLE app.facturas (
+    id SERIAL PRIMARY KEY,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_id INT,
+    FOREIGN KEY (usuario_id) REFERENCES app.usuarios(id)
+);
+
+CREATE TABLE app.detalle_factura (
+    id SERIAL PRIMARY KEY,
+    factura_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario NUMERIC(10,2) NOT NULL,
+    FOREIGN KEY (factura_id) REFERENCES app.facturas(id),
+    FOREIGN KEY (producto_id) REFERENCES app.productos(id)
+);
+
+
+CREATE OR REPLACE FUNCTION log_movimiento_stock()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.stock > OLD.stock THEN
+        -- Entrada de stock
+        INSERT INTO app.movimientos_stock(producto_id, producto_nombre, tipo_movimiento, cantidad)
+        VALUES (NEW.id, NEW.nombre, 'entrada', NEW.stock - OLD.stock);
+    ELSIF NEW.stock < OLD.stock THEN
+        -- Salida de stock
+        INSERT INTO app.movimientos_stock(producto_id, producto_nombre, tipo_movimiento, cantidad)
+        VALUES (NEW.id, NEW.nombre, 'salida', OLD.stock - NEW.stock);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger que además de registrar salida de stock,
+-- crea automáticamente la factura y su detalle.
+CREATE OR REPLACE FUNCTION log_movimiento_y_factura()
+RETURNS TRIGGER AS $$
+DECLARE
+    nueva_factura_id INT;
+BEGIN
+    IF NEW.stock > OLD.stock THEN
+        -- Entrada de stock
+        INSERT INTO app.movimientos_stock(producto_id, producto_nombre, tipo_movimiento, cantidad)
+        VALUES (NEW.id, NEW.nombre, 'entrada', NEW.stock - OLD.stock);
+
+    ELSIF NEW.stock < OLD.stock THEN
+        -- Salida de stock
+        INSERT INTO app.movimientos_stock(producto_id, producto_nombre, tipo_movimiento, cantidad)
+        VALUES (NEW.id, NEW.nombre, 'salida', OLD.stock - NEW.stock);
+
+        -- 1. Crear factura
+        INSERT INTO app.facturas (usuario_id)
+        VALUES (NULL) -- aquí podrías meter el usuario logueado si lo manejás
+        RETURNING id INTO nueva_factura_id;
+
+        -- 2. Crear detalle de factura
+        INSERT INTO app.detalle_factura (factura_id, producto_id, cantidad, precio_unitario)
+        VALUES (
+            nueva_factura_id,
+            NEW.id,
+            (OLD.stock - NEW.stock), -- cantidad vendida
+            NEW.precio -- precio actual del producto
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Reemplazamos el trigger anterior por este
+DROP TRIGGER IF EXISTS trg_movimiento_stock ON app.productos;
+
+CREATE TRIGGER trg_movimiento_stock
+AFTER UPDATE OF stock ON app.productos
+FOR EACH ROW
+WHEN (OLD.stock IS DISTINCT FROM NEW.stock)
+EXECUTE FUNCTION log_movimiento_y_factura();
+-- OBSOLETO: evidencia recuperada. No ejecutar; la migración vigente está en supabase/migrations.

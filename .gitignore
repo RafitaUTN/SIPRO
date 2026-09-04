@@ -1,0 +1,31 @@
+# Archivos y carpetas a ignorar por Git
+node_modules/
+out/
+*.exe
+*.zip
+*.nupkg
+*.dll
+*.log
+.env
+.env.*
+!.env.example
+!.env.audit.example
+CREDENCIALES_ACCESO.md
+supabase/.temp/
+supabase/.branches/
+*.pem
+*.pfx
+SRC/firebase/serviceAccountKey.json
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+# Paquetes y builds
+*.app
+*.msi
+*.deb
+*.rpm
+*.tar.gz
+*.tgz
+*.bak
+# Carpeta de VSCode
+.vscode/

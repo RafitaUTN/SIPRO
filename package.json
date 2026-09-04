@@ -1,0 +1,49 @@
+{
+  "name": "sipro",
+  "version": "1.2.0",
+  "description": "SIPRO: inventario de escritorio con Electron y Supabase.",
+  "main": "SRC/index.js",
+  "scripts": {
+    "start": "powershell -ExecutionPolicy Bypass -File scripts/start-audit.ps1",
+    "start:electron": "electron-forge start",
+    "start:audit": "powershell -ExecutionPolicy Bypass -File scripts/start-audit.ps1",
+    "test": "node --test tests/audit/*.test.js",
+    "test:audit": "node --test tests/audit/*.test.js",
+    "test:integration": "node --test tests/integration/*.test.js",
+    "make": "electron-forge make",
+    "build": "electron-forge make",
+    "package": "electron-forge package",
+    "publish": "electron-forge publish"
+  },
+  "author": "Rafael Antonio Diaz",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.89.0",
+    "dotenv": "^16.3.1",
+    "electron-squirrel-startup": "^1.0.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "lucide": "^1.40.0",
+    "update-electron-app": "^3.3.0"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-squirrel": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.2",
+    "@electron-forge/publisher-github": "^7.11.2",
+    "electron": "^44.1.1",
+    "supabase": "2.116.0"
+  },
+  "overrides": {
+    "@electron/packager": "18.4.4",
+    "@electron/rebuild": "4.2.0",
+    "@inquirer/prompts": "8.7.1",
+    "extract-zip": "npm:@electron-internal/extract-zip@1.0.1",
+    "tar": "7.5.22",
+    "tmp": "0.2.7",
+    "uuid": "11.1.1"
+  },
+  "config": {}
+}

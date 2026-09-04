@@ -1,0 +1,153 @@
+/* ================================
+   Estilos generales del body
+================================ */
+body {
+  background: var(--color-background);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* card al inicio del viewport */
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+/* ================================
+   Card principal
+================================ */
+.dashboard-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  width: 90%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.8s ease-out;
+}
+
+/* ================================
+   Títulos y párrafos
+================================ */
+h1 {
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+p {
+  margin-bottom: 1.5rem;
+  color: #34495e;
+}
+
+/* ================================
+   Contenedor tabla scrollable
+================================ */
+.table-container {
+  max-height: 50vh; /* altura máxima antes de scroll */
+  overflow-y: auto; /* scroll vertical */
+  overflow-x: hidden; /* evita scroll horizontal */
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  margin-top: 1rem;
+}
+
+/* Encabezado fijo */
+.table-container thead th {
+  position: sticky;
+  top: 0;
+  background-color: #212529; /* color thead dark */
+  color: #fff;
+  z-index: 2;
+}
+
+/* ================================
+   Estilos de tabla
+================================ */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+th, td {
+  padding: 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* ================================
+   Animaciones
+================================ */
+@keyframes slideIn {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* ================================
+   Inputs de búsqueda y filtros
+================================ */
+input[type="search"], .form-select, input[type="date"] {
+  margin-bottom: 1rem;
+}
+
+/* ================================
+   Botones
+================================ */
+.btn {
+  cursor: pointer;
+}
+
+.btn-outline-dark {
+  margin-top: 1rem;
+}
+
+.filtro-container .form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.filtro-container .form-control,
+.filtro-container .form-select {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Botón exportar alineado con los filtros */
+.filtro-container .btn-success {
+  margin-top: 0;
+  white-space: nowrap;
+  padding: 0.6rem 1.5rem;
+  font-weight: 500;
+}
+
+.filtro-container .btn-success i {
+  margin-right: 0.5rem;
+}
+
+/* Responsive para mobile */
+@media (max-width: 768px) {
+  .filtro-container .btn-success {
+    margin-top: 1rem;
+  }
+}
+.pagination-bar { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1rem 0; }
+.pagination-bar button + button { margin-left:.5rem; }
+
+body { background:var(--color-background); display:block; height:auto; min-height:100vh; padding:0; }
+.app-frame .dashboard-card { width:100%; max-width:none; margin:0; padding:0; background:transparent; box-shadow:none; border-radius:0; text-align:left; }
+.app-frame .table-container { background:var(--color-surface); overflow-x:auto; }

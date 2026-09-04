@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CRUD de Productos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self';">
+  <link href="../css/vendor.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/panelPrincipal.css">
+  <link rel="stylesheet" href="../css/CRUDPRODUCTOS.css">
+</head>
+<body>
+  <aside class="app-sidebar" aria-label="Navegación principal">
+    <div class="sidebar-brand"><span class="brand-mark">S</span><span>SIPRO</span></div>
+    <nav class="sidebar-nav"><a class="sidebar-link" href="panelPrincipal.html"><i data-lucide="layout-dashboard"></i> Dashboard</a><a class="sidebar-link active" href="productos.html"><i data-lucide="package"></i> Productos</a><a class="sidebar-link" href="usuarios.html"><i data-lucide="users"></i> Usuarios</a><a class="sidebar-link" href="registro.html"><i data-lucide="arrow-left-right"></i> Movimientos</a></nav>
+  </aside>
+  <div class="container mt-4">
+    <div class="module-toolbar"><p>Administra el inventario de productos</p><button id="newProductButton" class="btn btn-primary"><i data-lucide="plus" aria-hidden="true"></i> Nuevo producto</button></div>
+    <div class="mb-3">
+      <input type="search" id="filtro" class="form-control" placeholder="Buscar producto por nombre, código o categoría...">
+    </div>
+    <div class="row mb-3">
+    <div class="col-md-4">
+      <select id="filtroCategoria" class="form-select">
+        <option value="">Todas las categorías</option>
+
+      </select>
+    </div>
+</div>
+    <div class="table-container">
+      <table class="table table-striped table-hover" id="tablaProductos">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Categoría</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="pagination-bar" aria-label="Paginación de productos">
+      <span id="paginacionInfo"></span>
+      <div><button id="paginaAnterior" class="btn btn-outline-secondary btn-sm"><i data-lucide="chevron-left" aria-hidden="true"></i> Anterior</button><button id="paginaSiguiente" class="btn btn-outline-secondary btn-sm">Siguiente <i data-lucide="chevron-right" aria-hidden="true"></i></button></div>
+    </div>
+  </div>
+  <script src="../../node_modules/lucide/dist/umd/lucide.min.js"></script>
+  <script src="../js/vendor/bootstrap.js"></script>
+  <script src="../helpers/notificaciones.js"></script>
+  <script src="../js/CRUDPRODUCTO.js"></script>
+</body>
+
+</html>
