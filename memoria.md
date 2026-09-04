@@ -80,6 +80,7 @@ Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`
 
 - GitHub CLI autenticada como `RafitaUTN` con permisos de repositorio y workflows.
 - Repositorio privado creado y publicado: `https://github.com/RafitaUTN/SIPRO`.
+- Release privado `v1.2.0` publicado con Setup, paquete NuGet, ZIP y manifiesto `RELEASES`. GitHub Actions terminó en verde en 5 min 9 s: `https://github.com/RafitaUTN/SIPRO/actions/runs/33848211518`.
 - Supabase CLI autorizada y proyecto `mopgfccvkfyhccvzxmoe` enlazado; estado remoto saludable y PostgreSQL `17.6.1.113`.
 - Se inspeccionó el esquema antes de escribir. La otra aplicación conserva `images`, `monitor_history`, `monitor_state`, `productos` y `users_profile` sin cambios de SIPRO.
 - Migraciones SIPRO de esquema aislado, datos de demostración y endurecimiento aplicadas.
