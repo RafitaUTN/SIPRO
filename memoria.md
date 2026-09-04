@@ -13,7 +13,7 @@ Este archivo es la memoria operativa permanente de SIPRO. Debe actualizarse con 
 - Entry point: `SRC/index.js`.
 - Versión actual: `1.2.1`.
 - Base de datos remota solicitada: Supabase `mopgfccvkfyhccvzxmoe`.
-- Repositorio previsto: `RafitaUTN/SIPRO`.
+- Repositorio público: `RafitaUTN/SIPRO`.
 - Facturación permanece fuera del alcance porque el código recuperado no tiene un flujo funcional ni reglas fiscales definidas.
 
 ## Arquitectura vigente
@@ -80,26 +80,35 @@ Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`
 ## Estado remoto
 
 - GitHub CLI autenticada como `RafitaUTN` con permisos de repositorio y workflows.
-- Repositorio privado creado y publicado: `https://github.com/RafitaUTN/SIPRO`.
-- Release privado `v1.2.0` publicado con Setup, paquete NuGet, ZIP y manifiesto `RELEASES`. GitHub Actions terminó en verde en 5 min 9 s: `https://github.com/RafitaUTN/SIPRO/actions/runs/33848211518`.
+- Repositorio público creado y publicado: `https://github.com/RafitaUTN/SIPRO`.
+- Release `v1.2.0` publicado con Setup, paquete NuGet, ZIP y manifiesto `RELEASES`. GitHub Actions terminó en verde en 5 min 9 s: `https://github.com/RafitaUTN/SIPRO/actions/runs/33848211518`.
 - Supabase CLI autorizada y proyecto `mopgfccvkfyhccvzxmoe` enlazado; estado remoto saludable y PostgreSQL `17.6.1.113`.
 - Se inspeccionó el esquema antes de escribir. La otra aplicación conserva `images`, `monitor_history`, `monitor_state`, `productos` y `users_profile` sin cambios de SIPRO.
 - Migraciones SIPRO de esquema aislado, datos de demostración y endurecimiento aplicadas.
 - Edge Function `sipro-admin-users` desplegada y verificada remotamente.
 - Cuatro cuentas Auth SIPRO aprovisionadas y verificadas: admin, encargado, inventario y consulta.
 - El error de creación de usuarios provenía del trigger heredado `enforce_max_five_users`, que contaba perfiles de ambas aplicaciones. La migración `20260904081213_isolate_sipro_auth_profiles.sql` conserva el límite de cinco para la aplicación anterior, excluye cuentas SIPRO y eliminó únicamente los perfiles SIPRO copiados por error a `users_profile`.
-- Validación remota: 4 usuarios, 8 categorías y 20 productos; lectura anónima y escritura de consulta bloqueadas; ajuste de stock reversible y función administrativa correctos. Los 11 movimientos creados por verificaciones reversibles/XSS se eliminaron de forma dirigida; quedaron los 20 movimientos iniciales de demostración.
+- Validación remota: 4 usuarios, 8 categorías y 21 productos (20 de demostración y 1 creado por el usuario, preservado); lectura anónima y escritura de consulta bloqueadas; ajuste de stock reversible y función administrativa correctos. Se eliminaron de forma dirigida únicamente los movimientos temporales de verificación/XSS.
 - La aplicación empaquetada usa la URL y clave publicable incorporadas. Nunca contiene la service role y ya no lee `.env` de desarrollo desde el directorio de ejecución.
 - Prueba empaquetada contra remoto: login y sesión admin, panel con datos, productos, 4 usuarios y movimientos; cero errores de renderer, `require` ausente y XSS no ejecutado.
 - Los asesores remotos reportan hallazgos heredados de la otra aplicación. En SIPRO se revocó la ejecución directa del trigger, se optimizaron políticas RLS y se añadió el índice de usuario. Las dos RPC de negocio permanecen intencionalmente `SECURITY DEFINER`, con ejecución solo autenticada y validación interna estricta de roles.
 - Workflow `supabase-keepalive.yml`: programado cada seis horas (minuto 17), ejecuta el RPC existente `keepalive()` equivalente a `SELECT 1`, exige respuesta exacta `1` y usa solo URL/clave publicable guardadas como variables de GitHub.
+- La migración `20260904084451_harden_keepalive_function.sql` cambió `keepalive()` a `SECURITY INVOKER`, fijó `search_path` vacío y limitó su ejecución a `anon`, `authenticated` y `service_role`. Conserva el resultado `1`; desaparecieron sus avisos del asesor de seguridad.
 - Instalación 1.2.1 probada sobre Windows con Squirrel: código de salida 0, 8.8 segundos y carpeta `app-1.2.1` correcta. El arranque normal queda deshabilitado durante hooks Squirrel para evitar el timeout que provocaba “Installation has failed” aunque la instalación hubiera terminado.
 - Identidad visual 1.2.1: `favicon.ico` aplicado a ejecutable, Setup, ventana y acceso directo. El acceso directo probado apunta al ejecutable instalado y obtiene el icono de este.
 - UI 1.2.1 instalada y probada contra remoto: texto descriptivo a 16 px, fecha a 15 px, ambos más oscuros; toast a un lado del modal en escritorio, con `z-index 300` sobre el modal `100`; creación y eliminación de usuario desde la interfaz confirmadas.
 
 ## Publicación 1.2.1
 
-Pendiente en esta ejecución: subir el commit, ejecutar manualmente el keep-alive en GitHub, publicar el tag/release `v1.2.1` y verificar una actualización desde 1.2.0. El repositorio deberá ser público para que `update.electronjs.org` pueda entregar Releases sin credenciales al cliente instalado.
+- Commit funcional publicado: `f08c0bf` (`fix: publicar SIPRO 1.2.1 con Auth e instalador corregidos`).
+- Repositorio convertido a público para permitir actualizaciones anónimas mediante `update.electronjs.org`.
+- Workflow keep-alive ejecutado manualmente en verde antes y después del endurecimiento: `https://github.com/RafitaUTN/SIPRO/actions/runs/33853338668` y `https://github.com/RafitaUTN/SIPRO/actions/runs/33855130942`.
+- Tag y release pública `v1.2.1` publicados con `RELEASES`, `.nupkg`, Setup y ZIP: `https://github.com/RafitaUTN/SIPRO/releases/tag/v1.2.1`.
+- Workflow de release finalizado en verde en 10 min 3 s: `https://github.com/RafitaUTN/SIPRO/actions/runs/33853368004`.
+- El icono remoto requerido por Squirrel responde HTTP 200.
+- El servicio oficial conserva el catálogo de releases durante 15 minutos. Después de esa propagación, el endpoint entregó `SIPRO-1.2.1-full.nupkg` a la instalación pública `1.2.0`.
+- Actualización remota comprobada de extremo a extremo: `1.2.0` descargó los 172,546,285 bytes del `.nupkg`, Squirrel creó `app-1.2.1` y terminó sin error. Tras reiniciar desde el acceso estable `SIPRO.exe`, todos los procesos se ejecutaron desde `app-1.2.1`; `ProductVersion` y `FileVersion` fueron `1.2.1`.
+- Las acciones de checkout y Node del workflow quedaron actualizadas a v5 para evitar la advertencia de deprecación de Node 20 en futuras releases.
 
 ## Comandos de continuidad
 
