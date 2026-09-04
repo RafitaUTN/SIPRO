@@ -79,7 +79,8 @@ Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`
 ## Estado remoto
 
 - GitHub CLI autenticada como `RafitaUTN` con permisos de repositorio y workflows.
-- El repositorio `RafitaUTN/SIPRO` todavía no existía en la última comprobación.
+- Repositorio privado creado y publicado: `https://github.com/RafitaUTN/SIPRO`.
+- Rama `main` subida con commit inicial `fe18d2c`.
 - Supabase CLI inició autorización oficial, pero está esperando el código mostrado por el navegador.
 - El `.env` recuperado apunta a otro proyecto; no se reutiliza para `mopgfccvkfyhccvzxmoe`.
 - No se ha escrito nada aún en la base remota.
@@ -93,8 +94,7 @@ Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`
 5. Aprovisionar cuatro cuentas Auth SIPRO y verificar login/RLS remoto.
 6. Incorporar URL y clave pública del proyecto al runtime distribuible; nunca la service role.
 7. Ejecutar pruebas, build e instalación final.
-8. Crear repositorio privado por defecto, revisar el commit y subir `main`.
-9. Definir si se habilita un canal público de Releases para actualización automática.
+8. Definir si se hace público el repositorio o se habilita un canal público separado de Releases para actualización automática.
 
 ## Comandos de continuidad
 
