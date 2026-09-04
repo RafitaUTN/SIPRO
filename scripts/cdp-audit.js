@@ -24,6 +24,7 @@ async function run() {
   const login = await supabase.auth.signInWithPassword({ email: auditEmail, password: auditPassword });
   if (login.error) throw login.error;
   const marker = `AUD-XSS-${process.pid}-${Date.now()}`;
+  const uiUserEmail = `auditoria-ui-${process.pid}-${Date.now()}@example.invalid`;
   const category = await supabase.from('sipro_categorias').select('id').limit(1).single();
   if (category.error) throw category.error;
   const injected = await supabase.rpc('sipro_crear_producto', {
@@ -38,6 +39,7 @@ async function run() {
 
   const result = { rendererErrors: [], pages: {} };
   let socket;
+  let temporaryUserId;
   try {
     const target = await getTarget();
     if (!target) throw new Error('No se encontró una página Electron en el puerto 9222.');
@@ -74,19 +76,35 @@ async function run() {
     await evaluate(`(() => { document.getElementById('email').value=${JSON.stringify(auditEmail)}; document.getElementById('password').value=${JSON.stringify(auditPassword)}; document.getElementById('loginForm').requestSubmit(); return true; })()`);
     await waitFor(`typeof window.showView === 'function'`);
     await waitFor(`document.getElementById('totalProductos')?.textContent !== '--'`);
-    result.pages.panel = await evaluate(`({ url: location.href, session: JSON.parse(sessionStorage.getItem('siproSession') || 'null'), products: document.getElementById('totalProductos')?.textContent, users: document.getElementById('totalUsuarios')?.textContent })`);
+    result.pages.panel = await evaluate(`(() => { const intro = getComputedStyle(document.querySelector('.page-intro p')); const date = getComputedStyle(document.querySelector('.date-label')); return { url: location.href, session: JSON.parse(sessionStorage.getItem('siproSession') || 'null'), products: document.getElementById('totalProductos')?.textContent, users: document.getElementById('totalUsuarios')?.textContent, introFontSize: intro.fontSize, introColor: intro.color, dateFontSize: date.fontSize, dateColor: date.color }; })()`);
     await evaluate(`window.showView('productos.html')`); await waitFor(`document.querySelectorAll('#tablaProductos tbody tr').length > 0`);
     result.pages.productos = await evaluate(`({ rows: document.querySelectorAll('#tablaProductos tbody tr').length, xssExecuted: document.body.dataset.auditXss === '${marker}' })`);
     await evaluate(`window.showView('usuarios.html')`); await waitFor(`document.querySelectorAll('#tablaUsuarios tbody tr').length > 0`);
-    result.pages.usuarios = await evaluate(`({ rows: document.querySelectorAll('#tablaUsuarios tbody tr').length })`);
+    await evaluate(`document.getElementById('newUserButton').click(); mostrarToast('Validación de posición', 'warning');`);
+    await waitFor(`Boolean(document.querySelector('.app-modal') && document.querySelector('.toast'))`);
+    const notificationLayout = await evaluate(`(() => { const modal = document.querySelector('.app-modal').getBoundingClientRect(); const toast = document.querySelector('.toast-container').getBoundingClientRect(); return { modalZ: getComputedStyle(document.querySelector('.modal-overlay')).zIndex, toastZ: getComputedStyle(document.querySelector('.toast-container')).zIndex, sideBySide: toast.right <= modal.left || toast.left >= modal.right, viewportWidth: innerWidth }; })()`);
+    await evaluate(`(() => { document.getElementById('nombreUsuario').value='Usuario temporal UI'; document.getElementById('emailUsuario').value=${JSON.stringify(uiUserEmail)}; document.getElementById('passwordUsuario').value='Temporal!Sipro-UI-2026'; document.getElementById('rolUsuario').value='consulta'; document.getElementById('formUsuario').requestSubmit(); return true; })()`);
+    await waitFor(`!document.querySelector('.app-modal') && document.body.textContent.includes(${JSON.stringify(uiUserEmail)})`);
+    const createdProfile = await supabase.from('sipro_usuarios').select('id').eq('email', uiUserEmail).single();
+    if (createdProfile.error) throw createdProfile.error;
+    temporaryUserId = createdProfile.data.id;
+    result.pages.usuarios = await evaluate(`({ rows: document.querySelectorAll('#tablaUsuarios tbody tr').length, userCreated: document.body.textContent.includes(${JSON.stringify(uiUserEmail)}), notificationLayout: ${JSON.stringify(notificationLayout)} })`);
     await evaluate(`window.showView('registro.html')`); await waitFor(`document.querySelectorAll('#tablaMovimientos tbody tr').length > 0`);
     result.pages.movimientos = await evaluate(`({ rows: document.querySelectorAll('#tablaMovimientos tbody tr').length })`);
   } finally {
     socket?.close();
+    if (!temporaryUserId) {
+      const lookup = await supabase.from('sipro_usuarios').select('id').eq('email', uiUserEmail).maybeSingle();
+      temporaryUserId = lookup.data?.id;
+    }
+    if (temporaryUserId) await supabase.functions.invoke('sipro-admin-users', { body: { action: 'delete', id: temporaryUserId } });
     await supabase.from('sipro_movimientos_stock').delete().eq('producto_id', injected.data.id);
     await supabase.from('sipro_productos').delete().eq('id', injected.data.id);
   }
-  if (result.pages.login.requireType !== 'undefined' || result.pages.productos.xssExecuted || result.rendererErrors.length) {
+  const typographyOk = parseFloat(result.pages.panel.introFontSize) >= 16 && parseFloat(result.pages.panel.dateFontSize) >= 15;
+  const notificationOk = Number(result.pages.usuarios.notificationLayout.toastZ) > Number(result.pages.usuarios.notificationLayout.modalZ)
+    && (result.pages.usuarios.notificationLayout.viewportWidth < 1200 || result.pages.usuarios.notificationLayout.sideBySide);
+  if (result.pages.login.requireType !== 'undefined' || result.pages.productos.xssExecuted || !result.pages.usuarios.userCreated || !typographyOk || !notificationOk || result.rendererErrors.length) {
     throw new Error(`Auditoría Electron falló: ${JSON.stringify(result)}`);
   }
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

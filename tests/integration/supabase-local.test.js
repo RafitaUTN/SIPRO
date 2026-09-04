@@ -56,6 +56,10 @@ test('la función administrativa crea y elimina usuarios SIPRO mediante Auth', a
   assert.equal(created.error, null);
   assert.equal(created.data.ok, true);
   assert.equal(created.data.user.email, email);
+  const serviceClient = makeClient(service);
+  const leaked = await serviceClient.from('users_profile').select('id').eq('email', email);
+  assert.ok(!leaked.error || leaked.error.code === 'PGRST205');
+  if (!leaked.error) assert.equal(leaked.data.length, 0);
   const removed = await admin.functions.invoke('sipro-admin-users', { body: { action: 'delete', id: created.data.user.id } });
   assert.equal(removed.error, null);
   assert.equal(removed.data.ok, true);

@@ -1,7 +1,7 @@
 //  IMPORTACIONES
 
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron');
-if (require('electron-squirrel-startup')) app.quit();
+const squirrelStartup = require('electron-squirrel-startup');
 const path = require('path');
 const fs = require('fs');
 const dns = require('dns');
@@ -41,7 +41,7 @@ const createMainWindow = () => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    icon: path.join(__dirname, 'assets', 'logo hotel.png'),
+    icon: path.join(__dirname, 'assets', 'favicon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -179,7 +179,8 @@ app.on('activate', () => {
   if (mainWindow === null) createMainWindow();
 });
 
-app.whenReady().then(async () => {
+if (!squirrelStartup) app.whenReady().then(async () => {
+  app.setAppUserModelId('com.hotelsilencio.sipro');
   const hayInternet = await verificarConexionInternet();
   if (!hayInternet) {
     dialog.showMessageBoxSync({

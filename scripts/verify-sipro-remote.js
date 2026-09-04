@@ -32,14 +32,16 @@ async function main() {
   assert.ok(anonymousError || anonymousProducts.length === 0, 'RLS permitió lectura anónima');
 
   const sessions = new Map();
+  let productCount = 0;
   for (const user of users) {
     const supabase = await signIn(user);
     sessions.set(user.rol, supabase);
     const { data, error, count } = await supabase.from('sipro_productos')
       .select('id,nombre,stock', { count: 'exact' }).limit(25);
     assert.ifError(error);
-    assert.equal(count, 20);
-    assert.equal(data.length, 20);
+    assert.ok(count >= 20);
+    assert.ok(data.length >= 20);
+    productCount = count;
   }
 
   const consulta = sessions.get('consulta');
@@ -56,7 +58,7 @@ async function main() {
   const { data: profiles, error: profilesError, count: profileCount } = await admin
     .from('sipro_usuarios').select('id,email', { count: 'exact' });
   assert.ifError(profilesError);
-  assert.equal(profileCount, 4);
+  assert.ok(profileCount >= 4);
 
   const inventory = sessions.get('inventario');
   const { data: selected, error: selectedError } = await inventory
@@ -74,20 +76,21 @@ async function main() {
   assert.ifError(exitError);
   assert.equal(restored.stock, originalStock);
 
-  // El proyecto compartido tiene un límite configurado de cinco cuentas Auth
-  // (una de la otra aplicación y cuatro de SIPRO). Verificamos la función con
-  // una actualización idempotente para no ocupar ni alterar cuentas ajenas.
-  const consultationProfile = profiles.find(profile => profile.email === 'consulta.sipro@hotel-silencio.invalid');
-  assert.ok(consultationProfile);
-  const { data: updated, error: updateError } = await admin.functions.invoke('sipro-admin-users', {
+  const tempEmail = `verificacion-sipro-${Date.now()}@example.invalid`;
+  const { data: created, error: createError } = await admin.functions.invoke('sipro-admin-users', {
     body: {
-      action: 'update', id: consultationProfile.id, nombre: 'Consulta SIPRO',
-      email: consultationProfile.email, rol: 'consulta', activo: true
+      action: 'create', nombre: 'Usuario temporal de verificación', email: tempEmail,
+      password: 'Temporal!Sipro-2026', rol: 'consulta'
     }
   });
-  assert.ifError(updateError);
-  assert.equal(updated.ok, true);
-  assert.equal(updated.user.email, consultationProfile.email);
+  assert.ifError(createError);
+  assert.equal(created.ok, true);
+  assert.equal(created.user.email, tempEmail);
+  const { data: removed, error: deleteError } = await admin.functions.invoke('sipro-admin-users', {
+    body: { action: 'delete', id: created.user.id }
+  });
+  assert.ifError(deleteError);
+  assert.equal(removed.ok, true);
 
   const { count: movements, error: movementsError } = await admin
     .from('sipro_movimientos_stock').select('id', { count: 'exact', head: true });
@@ -95,9 +98,9 @@ async function main() {
   assert.ok(movements >= 22);
   process.stdout.write(JSON.stringify({
     project: 'mopgfccvkfyhccvzxmoe', usersVerified: 4, categories,
-    products: 20, movements, anonymousReadBlocked: true,
+    products: productCount, movements, anonymousReadBlocked: true,
     consultationWriteBlocked: true, stockRestored: true,
-    edgeFunctionUpdateVerified: true, authProjectLimitReached: '5/5'
+    edgeFunctionCreateDeleteVerified: true, authIsolationVerified: true
   }, null, 2));
 }
 

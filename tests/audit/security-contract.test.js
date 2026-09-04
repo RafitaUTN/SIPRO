@@ -58,3 +58,19 @@ test('ningún secreto de servicio se usa en el runtime de la aplicación', () =>
   assert.match(forge, /\\\.env/);
   assert.match(forge, /supabase/);
 });
+
+test('la distribución usa identidad visual propia y el keep-alive ejecuta SELECT 1 cada seis horas', () => {
+  const forge = read('forge.config.js');
+  const main = read('SRC/index.js');
+  const workflow = read('.github/workflows/supabase-keepalive.yml');
+  const css = `${read('SRC/css/vendor.css')}\n${read('SRC/css/panelPrincipal.css')}`;
+  assert.match(forge, /favicon\.ico/);
+  assert.match(forge, /setupIcon/);
+  assert.match(main, /favicon\.ico/);
+  assert.match(main, /!squirrelStartup/);
+  assert.match(workflow, /17 \*\/6 \* \* \*/);
+  assert.match(workflow, /rpc\/keepalive/);
+  assert.match(css, /z-index:\s*300/);
+  assert.match(css, /font-size:16px/);
+  assert.match(css, /font-size:15px/);
+});

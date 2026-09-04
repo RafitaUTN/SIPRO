@@ -15,7 +15,14 @@ body { margin: 0; font-family: "Segoe UI", sans-serif; color: #172033; }
 .btn-outline-dark, .btn-outline-light { background: transparent; border: 1px solid currentColor; }
 .table { width: 100%; border-collapse: collapse; } .table th, .table td { padding: .65rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
 .table-dark { background: #172033; color: white; } .table-striped tr:nth-child(even) { background: #f8fafc; }
-.toast-container { position: fixed; right: 1rem; bottom: 1rem; z-index: 10; } .toast { margin-top: .5rem; padding: .8rem 1rem; border-radius: .4rem; color: white; }
+.toast-container { position: fixed; right: 1rem; bottom: 1rem; z-index: 300; width: min(340px, calc(100vw - 2rem)); pointer-events: none; }
+.toast { margin-top: .5rem; padding: .9rem 1rem; border-radius: .55rem; color: white; box-shadow: 0 12px 32px rgba(18, 55, 46, .28); pointer-events: auto; }
+@media (min-width: 1200px) {
+  body.modal-open .toast-container { top: 50%; right: max(1rem, calc(50% - 590px)); bottom: auto; transform: translateY(-50%); }
+}
+@media (max-width: 1199px) {
+  body.modal-open .toast-container { top: 1rem; right: 1rem; bottom: auto; }
+}
 .text-bg-danger { background: #dc2626; } .text-bg-success { background: #16a34a; } .text-bg-warning { background: #d97706; } .text-bg-info { background: #0284c7; }
 .modal { position: fixed; inset: 0; display: none; background: #0008; align-items: center; justify-content: center; z-index: 20; }
 .modal.show { display: flex; } .modal-dialog { width: min(95%, 500px); } .modal-content { background: white; padding: 1rem; border-radius: .5rem; }

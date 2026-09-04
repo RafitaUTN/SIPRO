@@ -60,7 +60,17 @@ async function getAllUsuarios(options = {}) {
 
 async function invokeAdmin(action, payload) {
   const { data, error } = await getSupabase().functions.invoke('sipro-admin-users', { body: { action, ...payload } });
-  if (error) throw error;
+  if (error) {
+    let message = error.message;
+    try {
+      const response = error.context?.clone ? error.context.clone() : error.context;
+      const details = response?.json ? await response.json() : null;
+      if (details?.error) message = details.error;
+    } catch {
+      // Conserva el mensaje original cuando el gateway no devuelve JSON.
+    }
+    throw new Error(message || 'No fue posible gestionar el usuario');
+  }
   if (!data?.ok) throw new Error(data?.error || 'No fue posible gestionar el usuario');
   return toSafeUser(data.user);
 }

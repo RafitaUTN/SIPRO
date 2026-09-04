@@ -6,6 +6,8 @@ function mostrarToast(mensaje, tipo = "info", titulo = "Notificación") {
   if (!toastContainer) {
     toastContainer = document.createElement("div");
     toastContainer.className = "toast-container position-fixed bottom-0 end-0 p-3";
+    toastContainer.setAttribute('aria-live', 'polite');
+    toastContainer.setAttribute('aria-atomic', 'true');
     document.body.appendChild(toastContainer);
   }
 
@@ -16,6 +18,7 @@ function mostrarToast(mensaje, tipo = "info", titulo = "Notificación") {
   toastElement.id = toastId;
   toastElement.className = `toast text-bg-${tipo} border-0`;
   toastElement.setAttribute('role', 'alert');
+  toastElement.setAttribute('aria-live', tipo === 'danger' ? 'assertive' : 'polite');
   const body = document.createElement('div');
   body.className = 'toast-body';
   const titleNode = document.createElement('strong');

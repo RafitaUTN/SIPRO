@@ -97,6 +97,8 @@ npm ls update-electron-app
 
 Las actualizaciones se comprueban al iniciar una aplicación empaquetada y periódicamente mientras permanece abierta. En desarrollo se omite el chequeo. Antes de producción hay que validar una instalación de la versión anterior contra un release público y confirmar el flujo descargar/reiniciar.
 
+El proceso principal omite por completo el arranque normal durante `--squirrel-install`, `--squirrel-updated`, `--squirrel-uninstall` y `--squirrel-obsolete`. Así el hook del instalador termina antes de su timeout y no muestra un fallo después de haber copiado correctamente la aplicación.
+
 ### ¿Cómo firmar con certificado? (Opcional, para producción)
 Agrega en `.env`:
 ```

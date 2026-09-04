@@ -11,7 +11,7 @@ Este archivo es la memoria operativa permanente de SIPRO. Debe actualizarse con 
 - Raíz efectiva: `C:\Users\rafad\Music\SIPRO_proyecto_recuperado_COMPLETO\SIPRO_proyecto_recuperado`.
 - Aplicación Electron de inventario del Hotel El Silencio del Campo.
 - Entry point: `SRC/index.js`.
-- Versión actual: `1.2.0`.
+- Versión actual: `1.2.1`.
 - Base de datos remota solicitada: Supabase `mopgfccvkfyhccvzxmoe`.
 - Repositorio previsto: `RafitaUTN/SIPRO`.
 - Facturación permanece fuera del alcance porque el código recuperado no tiene un flujo funcional ni reglas fiscales definidas.
@@ -65,6 +65,7 @@ Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`
 ## Evidencia verde acumulada
 
 - `npm test`: 6/6 pruebas de contrato y seguridad.
+- `npm test` en 1.2.1: 7/7; incluye contrato de icono, keep-alive, tipografía y apilamiento de notificaciones.
 - `npm run test:integration`: 3/3 pruebas contra Supabase local.
 - RLS: lectura anónima bloqueada y lectura autenticada permitida.
 - Concurrencia: dos salidas de 7 sobre stock 10 producen una sola aprobación y stock final 3.
@@ -86,15 +87,19 @@ Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`
 - Migraciones SIPRO de esquema aislado, datos de demostración y endurecimiento aplicadas.
 - Edge Function `sipro-admin-users` desplegada y verificada remotamente.
 - Cuatro cuentas Auth SIPRO aprovisionadas y verificadas: admin, encargado, inventario y consulta.
-- El proyecto tiene un límite personalizado de cinco cuentas Auth: una cuenta ajena más cuatro SIPRO dejan la capacidad en 5/5. No se modificó la cuenta de la otra aplicación.
+- El error de creación de usuarios provenía del trigger heredado `enforce_max_five_users`, que contaba perfiles de ambas aplicaciones. La migración `20260904081213_isolate_sipro_auth_profiles.sql` conserva el límite de cinco para la aplicación anterior, excluye cuentas SIPRO y eliminó únicamente los perfiles SIPRO copiados por error a `users_profile`.
 - Validación remota: 4 usuarios, 8 categorías y 20 productos; lectura anónima y escritura de consulta bloqueadas; ajuste de stock reversible y función administrativa correctos. Los 11 movimientos creados por verificaciones reversibles/XSS se eliminaron de forma dirigida; quedaron los 20 movimientos iniciales de demostración.
 - La aplicación empaquetada usa la URL y clave publicable incorporadas. Nunca contiene la service role y ya no lee `.env` de desarrollo desde el directorio de ejecución.
 - Prueba empaquetada contra remoto: login y sesión admin, panel con datos, productos, 4 usuarios y movimientos; cero errores de renderer, `require` ausente y XSS no ejecutado.
 - Los asesores remotos reportan hallazgos heredados de la otra aplicación. En SIPRO se revocó la ejecución directa del trigger, se optimizaron políticas RLS y se añadió el índice de usuario. Las dos RPC de negocio permanecen intencionalmente `SECURITY DEFINER`, con ejecución solo autenticada y validación interna estricta de roles.
+- Workflow `supabase-keepalive.yml`: programado cada seis horas (minuto 17), ejecuta el RPC existente `keepalive()` equivalente a `SELECT 1`, exige respuesta exacta `1` y usa solo URL/clave publicable guardadas como variables de GitHub.
+- Instalación 1.2.1 probada sobre Windows con Squirrel: código de salida 0, 8.8 segundos y carpeta `app-1.2.1` correcta. El arranque normal queda deshabilitado durante hooks Squirrel para evitar el timeout que provocaba “Installation has failed” aunque la instalación hubiera terminado.
+- Identidad visual 1.2.1: `favicon.ico` aplicado a ejecutable, Setup, ventana y acceso directo. El acceso directo probado apunta al ejecutable instalado y obtiene el icono de este.
+- UI 1.2.1 instalada y probada contra remoto: texto descriptivo a 16 px, fecha a 15 px, ambos más oscuros; toast a un lado del modal en escritorio, con `z-index 300` sobre el modal `100`; creación y eliminación de usuario desde la interfaz confirmadas.
 
-## Única decisión pendiente del propietario
+## Publicación 1.2.1
 
-Definir si `RafitaUTN/SIPRO` puede hacerse público o si se creará un canal público separado para los binarios. GitHub Actions y el actualizador ya están configurados, pero el servicio público de actualización de Electron no puede entregar releases de un repositorio privado. No se cambia la visibilidad sin autorización explícita.
+Pendiente en esta ejecución: subir el commit, ejecutar manualmente el keep-alive en GitHub, publicar el tag/release `v1.2.1` y verificar una actualización desde 1.2.0. El repositorio deberá ser público para que `update.electronjs.org` pueda entregar Releases sin credenciales al cliente instalado.
 
 ## Comandos de continuidad
 

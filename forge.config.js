@@ -1,9 +1,11 @@
+const path = require('node:path');
+
 module.exports = {
   packagerConfig: {
     name: 'SIPRO',
     executableName: 'SIPRO',
     asar: true,
-    icon: './SRC/assets/icononuevo',
+    icon: './SRC/assets/favicon.ico',
     ignore: [
       /^\/\.env(?:\..*)?$/,
       /^\/CREDENCIALES_ACCESO\.md$/,
@@ -16,7 +18,9 @@ module.exports = {
     {
       name: '@electron-forge/maker-squirrel',
       config: {
-        name: 'SIPRO'
+        name: 'SIPRO',
+        setupIcon: path.resolve(__dirname, 'SRC/assets/favicon.ico'),
+        iconUrl: 'https://raw.githubusercontent.com/RafitaUTN/SIPRO/main/SRC/assets/favicon.ico'
       }
     },
     {

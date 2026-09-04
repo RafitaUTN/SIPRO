@@ -4,6 +4,7 @@ Aplicación de escritorio para inventario, usuarios, movimientos de stock y repo
 
 ## Estado
 
+- Versión actual: `1.2.1`.
 - Renderer aislado: `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`.
 - Acceso a datos solo mediante IPC permitido y validado.
 - Autenticación con Supabase Auth; no se almacenan contraseñas en tablas de la aplicación.
@@ -12,6 +13,8 @@ Aplicación de escritorio para inventario, usuarios, movimientos de stock y repo
 - Movimientos de stock atómicos mediante `sipro_ajustar_stock`.
 - Instalador Windows y ZIP mediante Electron Forge.
 - Publicación por tags y GitHub Releases mediante GitHub Actions.
+- Keep-alive de Supabase cada seis horas mediante `.github/workflows/supabase-keepalive.yml`, validando que `SELECT 1` responda `1`.
+- Icono propio en ejecutable, instalador, ventana y acceso directo de Windows.
 
 ## Desarrollo local
 
@@ -59,6 +62,8 @@ git push origin v1.2.0
 ```
 
 El servicio público de actualización de Electron requiere que los releases sean accesibles públicamente. Si el código fuente debe permanecer privado, debe usarse un repositorio/canal público separado exclusivamente para binarios firmados.
+
+El workflow de keep-alive utiliza las variables públicas de repositorio `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`; no necesita ni admite la clave `service_role`.
 
 ## Documentación
 
