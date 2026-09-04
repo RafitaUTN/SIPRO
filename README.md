@@ -39,10 +39,13 @@ Las pruebas de integración se niegan a ejecutarse si `SUPABASE_URL` no es local
 ## Base de datos
 
 - Migración: `supabase/migrations/20260903193354_recovered_schema.sql`
-- Datos de demostración: `supabase/seed.sql`
+- Datos de demostración versionados: `supabase/migrations/20260904061438_seed_sipro_demo_data.sql`
+- Endurecimiento posterior al asesor: `supabase/migrations/20260904070203_harden_sipro_advisor_findings.sql`
 - Función administrativa: `supabase/functions/sipro-admin-users`
 
 El esquema incluye productos, categorías, perfiles SIPRO y movimientos. La facturación recuperada se mantiene fuera del producto hasta definir reglas fiscales y de negocio.
+
+La versión distribuible lleva únicamente la URL y la clave publicable del proyecto `mopgfccvkfyhccvzxmoe`. Los archivos `.env` se reservan para desarrollo y no pueden cambiar el destino de una aplicación empaquetada.
 
 Nunca se debe incluir `SUPABASE_SERVICE_ROLE_KEY` en Electron, Git ni el instalador. El cliente distribuido utiliza únicamente la URL y la clave pública/publishable; RLS es la frontera de autorización.
 

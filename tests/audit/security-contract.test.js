@@ -53,4 +53,8 @@ test('la base está aislada, usa RLS y el stock se modifica atómicamente', () =
 test('ningún secreto de servicio se usa en el runtime de la aplicación', () => {
   const runtime = [read('SRC/db/supabaseClient.js'), read('SRC/index.js'), read('forge.config.js')].join('\n');
   assert.doesNotMatch(runtime, /SERVICE_ROLE|sb_secret_/i);
+  const forge = read('forge.config.js');
+  assert.match(forge, /CREDENCIALES_ACCESO/);
+  assert.match(forge, /\\\.env/);
+  assert.match(forge, /supabase/);
 });

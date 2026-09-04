@@ -44,7 +44,7 @@ La migración no elimina, renombra ni altera tablas sin prefijo SIPRO. Antes de 
 
 ## Datos de demostración
 
-`supabase/seed.sql` contiene 8 categorías, 20 productos hoteleros realistas y movimientos iniciales. Todos son ficticios; no incluyen datos personales reales. Los usuarios se crean en Supabase Auth mediante `scripts/provision-sipro-users.js`.
+La migración `20260904061438_seed_sipro_demo_data.sql` contiene 8 categorías, 20 productos hoteleros realistas y movimientos iniciales. Todos son ficticios; no incluyen datos personales reales. Los usuarios se crean en Supabase Auth mediante `scripts/provision-sipro-users.js`. `supabase/seed.sql` queda vacío porque la carga idempotente está versionada como migración y debe aplicarse también en remoto.
 
 Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`, archivo ignorado por Git.
 
@@ -80,21 +80,20 @@ Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`
 
 - GitHub CLI autenticada como `RafitaUTN` con permisos de repositorio y workflows.
 - Repositorio privado creado y publicado: `https://github.com/RafitaUTN/SIPRO`.
-- Rama `main` subida con commit inicial `fe18d2c`.
-- Supabase CLI inició autorización oficial, pero está esperando el código mostrado por el navegador.
-- El `.env` recuperado apunta a otro proyecto; no se reutiliza para `mopgfccvkfyhccvzxmoe`.
-- No se ha escrito nada aún en la base remota.
+- Supabase CLI autorizada y proyecto `mopgfccvkfyhccvzxmoe` enlazado; estado remoto saludable y PostgreSQL `17.6.1.113`.
+- Se inspeccionó el esquema antes de escribir. La otra aplicación conserva `images`, `monitor_history`, `monitor_state`, `productos` y `users_profile` sin cambios de SIPRO.
+- Migraciones SIPRO de esquema aislado, datos de demostración y endurecimiento aplicadas.
+- Edge Function `sipro-admin-users` desplegada y verificada remotamente.
+- Cuatro cuentas Auth SIPRO aprovisionadas y verificadas: admin, encargado, inventario y consulta.
+- El proyecto tiene un límite personalizado de cinco cuentas Auth: una cuenta ajena más cuatro SIPRO dejan la capacidad en 5/5. No se modificó la cuenta de la otra aplicación.
+- Validación remota: 4 usuarios, 8 categorías y 20 productos; lectura anónima y escritura de consulta bloqueadas; ajuste de stock reversible y función administrativa correctos. Los 11 movimientos creados por verificaciones reversibles/XSS se eliminaron de forma dirigida; quedaron los 20 movimientos iniciales de demostración.
+- La aplicación empaquetada usa la URL y clave publicable incorporadas. Nunca contiene la service role y ya no lee `.env` de desarrollo desde el directorio de ejecución.
+- Prueba empaquetada contra remoto: login y sesión admin, panel con datos, productos, 4 usuarios y movimientos; cero errores de renderer, `require` ausente y XSS no ejecutado.
+- Los asesores remotos reportan hallazgos heredados de la otra aplicación. En SIPRO se revocó la ejecución directa del trigger, se optimizaron políticas RLS y se añadió el índice de usuario. Las dos RPC de negocio permanecen intencionalmente `SECURITY DEFINER`, con ejecución solo autenticada y validación interna estricta de roles.
 
-## Próximos pasos obligatorios
+## Única decisión pendiente del propietario
 
-1. Completar autorización Supabase y confirmar acceso al proyecto solicitado.
-2. Inspeccionar tablas, migraciones, versión PostgreSQL y configuración sin escribir.
-3. Enlazar el proyecto, ejecutar dry-run y aplicar solo objetos `sipro_`.
-4. Desplegar `sipro-admin-users`.
-5. Aprovisionar cuatro cuentas Auth SIPRO y verificar login/RLS remoto.
-6. Incorporar URL y clave pública del proyecto al runtime distribuible; nunca la service role.
-7. Ejecutar pruebas, build e instalación final.
-8. Definir si se hace público el repositorio o se habilita un canal público separado de Releases para actualización automática.
+Definir si `RafitaUTN/SIPRO` puede hacerse público o si se creará un canal público separado para los binarios. GitHub Actions y el actualizador ya están configurados, pero el servicio público de actualización de Electron no puede entregar releases de un repositorio privado. No se cambia la visibilidad sin autorización explícita.
 
 ## Comandos de continuidad
 
@@ -102,6 +101,7 @@ Las credenciales de entrega se mantienen únicamente en `CREDENCIALES_ACCESO.md`
 npm test
 npx supabase db reset --local
 npm run test:integration
+node scripts/verify-sipro-remote.js
 npm run make
 ```
 

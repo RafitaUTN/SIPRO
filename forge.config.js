@@ -4,6 +4,12 @@ module.exports = {
     executableName: 'SIPRO',
     asar: true,
     icon: './SRC/assets/icononuevo',
+    ignore: [
+      /^\/\.env(?:\..*)?$/,
+      /^\/CREDENCIALES_ACCESO\.md$/,
+      /^\/(?:\.git|\.github|AUDITORIA|IMPLEMENTACION|documentacion|scripts|supabase|tests)(?:\/|$)/,
+      /^\/(?:memoria\.md|PLAN_RECONSTRUCCION_SIPRO\.md)$/
+    ],
   },
   rebuildConfig: {},
   makers: [

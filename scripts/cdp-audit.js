@@ -4,9 +4,15 @@ const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env.audit'), override: false });
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-if (!['127.0.0.1', 'localhost'].includes(new URL(process.env.SUPABASE_URL).hostname)) {
-  throw new Error('cdp-audit solo permite una instancia Supabase local.');
+const host = new URL(process.env.SUPABASE_URL).hostname;
+const localAudit = ['127.0.0.1', 'localhost'].includes(host);
+const allowedRemoteAudit = process.env.SIPRO_ALLOW_REMOTE_AUDIT === '1'
+  && host === 'mopgfccvkfyhccvzxmoe.supabase.co';
+if (!localAudit && !allowedRemoteAudit) {
+  throw new Error('cdp-audit solo permite Supabase local o el proyecto SIPRO autorizado explícitamente.');
 }
+const auditEmail = process.env.SIPRO_AUDIT_EMAIL || 'admin.local@example.invalid';
+const auditPassword = process.env.SIPRO_AUDIT_PASSWORD || 'AuditOnly-Admin-123!';
 
 async function getTarget() {
   const response = await fetch('http://127.0.0.1:9222/json/list');
@@ -15,7 +21,7 @@ async function getTarget() {
 
 async function run() {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, { auth: { persistSession: false } });
-  const login = await supabase.auth.signInWithPassword({ email: 'admin.local@example.invalid', password: 'AuditOnly-Admin-123!' });
+  const login = await supabase.auth.signInWithPassword({ email: auditEmail, password: auditPassword });
   if (login.error) throw login.error;
   const marker = `AUD-XSS-${process.pid}-${Date.now()}`;
   const category = await supabase.from('sipro_categorias').select('id').limit(1).single();
@@ -54,17 +60,26 @@ async function run() {
       if (response.exceptionDetails) throw new Error(response.exceptionDetails.exception?.description || response.exceptionDetails.text);
       return response.result.value;
     };
+    const waitFor = async (expression, timeoutMs = 10000) => {
+      const started = Date.now();
+      while (Date.now() - started < timeoutMs) {
+        if (await evaluate(expression)) return;
+        await sleep(250);
+      }
+      throw new Error(`Tiempo agotado esperando: ${expression}`);
+    };
     await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
     await send('Page.navigate', { url: new URL('index.html', target.url).href }); await sleep(1000);
     result.pages.login = await evaluate(`({ requireType: typeof require, electronApiType: typeof window.electronAPI, formPresent: Boolean(document.getElementById('loginForm')) })`);
-    await evaluate(`(() => { document.getElementById('email').value='admin.local@example.invalid'; document.getElementById('password').value='AuditOnly-Admin-123!'; document.getElementById('loginForm').requestSubmit(); return true; })()`);
-    await sleep(1800);
+    await evaluate(`(() => { document.getElementById('email').value=${JSON.stringify(auditEmail)}; document.getElementById('password').value=${JSON.stringify(auditPassword)}; document.getElementById('loginForm').requestSubmit(); return true; })()`);
+    await waitFor(`typeof window.showView === 'function'`);
+    await waitFor(`document.getElementById('totalProductos')?.textContent !== '--'`);
     result.pages.panel = await evaluate(`({ url: location.href, session: JSON.parse(sessionStorage.getItem('siproSession') || 'null'), products: document.getElementById('totalProductos')?.textContent, users: document.getElementById('totalUsuarios')?.textContent })`);
-    await evaluate(`window.showView('productos.html')`); await sleep(1200);
+    await evaluate(`window.showView('productos.html')`); await waitFor(`document.querySelectorAll('#tablaProductos tbody tr').length > 0`);
     result.pages.productos = await evaluate(`({ rows: document.querySelectorAll('#tablaProductos tbody tr').length, xssExecuted: document.body.dataset.auditXss === '${marker}' })`);
-    await evaluate(`window.showView('usuarios.html')`); await sleep(1000);
+    await evaluate(`window.showView('usuarios.html')`); await waitFor(`document.querySelectorAll('#tablaUsuarios tbody tr').length > 0`);
     result.pages.usuarios = await evaluate(`({ rows: document.querySelectorAll('#tablaUsuarios tbody tr').length })`);
-    await evaluate(`window.showView('registro.html')`); await sleep(1000);
+    await evaluate(`window.showView('registro.html')`); await waitFor(`document.querySelectorAll('#tablaMovimientos tbody tr').length > 0`);
     result.pages.movimientos = await evaluate(`({ rows: document.querySelectorAll('#tablaMovimientos tbody tr').length })`);
   } finally {
     socket?.close();
