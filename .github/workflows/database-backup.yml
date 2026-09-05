@@ -110,7 +110,7 @@ jobs:
             echo "sipro_usuarios=$usuarios"
           } > "$backup_dir/manifest.txt"
 
-          tar -C "$backup_dir" -czf "$archive" sipro_*.json SHA256SUMS manifest.txt
+          (cd "$backup_dir" && tar -czf "$archive" sipro_*.json SHA256SUMS manifest.txt)
           gzip -t "$archive"
           printf '%s' "$BACKUP_ENCRYPTION_PASSWORD" | gpg --batch --yes --symmetric --cipher-algo AES256 \
             --pinentry-mode loopback --passphrase-fd 0 --output "$encrypted_archive" "$archive"
