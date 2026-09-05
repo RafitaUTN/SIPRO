@@ -22,5 +22,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportarInventario: () => ipcRenderer.invoke('exportar-inventario'),
   exportarMovimientos: (movimientos) => ipcRenderer.invoke('exportar-movimiento', movimientos),
   openReportFile: (filePath) => ipcRenderer.invoke('reports:open-file', filePath),
-  showReportInFolder: (filePath) => ipcRenderer.invoke('reports:show-in-folder', filePath)
+  showReportInFolder: (filePath) => ipcRenderer.invoke('reports:show-in-folder', filePath),
+  getUpdateStatus: () => ipcRenderer.invoke('updates:status'),
+  installUpdate: () => ipcRenderer.invoke('updates:install'),
+  postponeUpdate: () => ipcRenderer.invoke('updates:later'),
+  reportActivity: () => ipcRenderer.invoke('updates:activity'),
+  onUpdateReady: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    const listener = (_event, status) => callback(status);
+    ipcRenderer.on('updates:ready', listener);
+    return () => ipcRenderer.removeListener('updates:ready', listener);
+  }
 });

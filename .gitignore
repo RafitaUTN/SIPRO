@@ -10,7 +10,11 @@ out/
 .env.*
 !.env.example
 !.env.audit.example
+!.env.production.local.example
 CREDENCIALES_ACCESO.md
+CREDENCIALES_PRODUCCION.md
+CREDENCIALES_RESPALDO.md
+BD_SUPABASE_PRODUCCION/
 supabase/.temp/
 supabase/.branches/
 *.pem

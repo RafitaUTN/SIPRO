@@ -14,6 +14,13 @@ function validatePassword(password, optional = false) {
   return password;
 }
 
+function validateLoginPassword(password) {
+  if (typeof password !== 'string' || password.length < 1 || password.length > 1024) {
+    throw new Error('Contraseña inválida');
+  }
+  return password;
+}
+
 function toSafeUser(user) {
   if (!user) return null;
   const { id, auth_user_id, nombre, email, rol, activo, creado_en, actualizado_en } = user;
@@ -23,7 +30,7 @@ function toSafeUser(user) {
 async function validarLogin(email, password) {
   const supabase = getSupabase();
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email: normalizeEmail(email), password: validatePassword(password)
+    email: normalizeEmail(email), password: validateLoginPassword(password)
   });
   if (authError) {
     if (['invalid_credentials', 'email_not_confirmed'].includes(authError.code)) return null;

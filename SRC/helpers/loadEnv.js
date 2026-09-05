@@ -5,8 +5,8 @@ const dotenv = require('dotenv');
 // Estos son identificadores públicos de cliente protegidos por RLS.
 // Nunca debe añadirse aquí una clave service_role.
 const packagedDefaults = {
-  SUPABASE_URL: 'https://mopgfccvkfyhccvzxmoe.supabase.co',
-  SUPABASE_ANON_KEY: 'sb_publishable_KTvfJw4am1rlxdKzsY9GVQ_-_S8JEGL'
+  SUPABASE_URL: 'https://ndrcwqcqtymcjhkcscdp.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_UJX6n58X-5qp29ld7JZJnw_GGvl_L7e'
 };
 
 const applyPackagedDefaults = () => {

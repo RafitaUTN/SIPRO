@@ -74,3 +74,65 @@ test('la distribución usa identidad visual propia y el keep-alive ejecuta SELEC
   assert.match(css, /font-size:16px/);
   assert.match(css, /font-size:15px/);
 });
+
+test('los errores técnicos se convierten en mensajes claros para la persona usuaria', () => {
+  const { mensajeParaUsuario } = require('../../SRC/helpers/notificaciones');
+  assert.equal(
+    mensajeParaUsuario("Error invoking remote method 'usuarios:create': Error: La contraseña debe tener al menos 12 caracteres."),
+    'La contraseña debe tener al menos 12 caracteres.'
+  );
+  assert.equal(
+    mensajeParaUsuario({ message: 'PostgrestError PGRST116 stack at request', code: 'PGRST116' }),
+    'No fue posible completar la operación. Inténtalo de nuevo.'
+  );
+});
+
+test('la navegación prepara la vista sin pantalla blanca y la actualización usa el modal SIPRO', () => {
+  const shell = read('SRC/js/appShell.js');
+  const updater = read('SRC/helpers/autoUpdater.js');
+  assert.match(shell, /const viewCache = new Map/);
+  assert.match(shell, /await ensureStyles\(doc\)/);
+  assert.match(shell, /logo hotel\.png/);
+  assert.match(shell, /Instalar ahora/);
+  assert.match(shell, /Más tarde/);
+  assert.doesNotMatch(shell, /Cargando módulo/);
+  assert.match(updater, /onNotifyUser/);
+  assert.match(updater, /quitAndInstall/);
+  assert.doesNotMatch(updater, /makeUserNotifier/);
+});
+
+test('el respaldo programado cifra datos y la migración nunca sobrescribe el legado', () => {
+  const workflow = read('.github/workflows/database-backup.yml');
+  const migration = read('documentacion/sql/migrar_inventario_legacy.sql');
+  const ignore = read('.gitignore');
+  assert.match(workflow, /gpg --batch --yes --symmetric --cipher-algo AES256/);
+  assert.match(workflow, /retention-days:\s*14/);
+  assert.match(workflow, /path:\s*\$\{\{ steps\.backup\.outputs\.archive \}\}/);
+  assert.match(workflow, /sipro_categorias sipro_productos sipro_movimientos_stock sipro_usuarios/);
+  assert.match(workflow, /auth\/v1\/token\?grant_type=password/);
+  assert.doesNotMatch(workflow, /SUPABASE_DB_URL|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/i);
+  assert.match(migration, /begin;/i);
+  assert.match(migration, /destino sipro_\* debe estar vacío/i);
+  assert.doesNotMatch(migration, /(?:delete\s+from|truncate|drop\s+table|update)\s+public\.(?:usuarios|categorias|productos|movimientos_stock)\b/i);
+  assert.match(ignore, /BD_SUPABASE_PRODUCCION\//);
+  assert.match(ignore, /CREDENCIALES_PRODUCCION\.md/);
+});
+
+test('la distribución 1.2.2 apunta únicamente al proyecto de producción autorizado', () => {
+  const env = read('SRC/helpers/loadEnv.js');
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.version, '1.2.2');
+  assert.match(env, /ndrcwqcqtymcjhkcscdp\.supabase\.co/);
+  assert.match(env, /sb_publishable_/);
+  assert.doesNotMatch(env, /mopgfccvkfyhccvzxmoe/);
+  assert.doesNotMatch(env, /SUPABASE_SERVICE_ROLE_KEY\s*[:=]|sb_secret_/i);
+});
+
+test('la identidad visual muestra el nombre completo del hotel', () => {
+  const login = read('SRC/views/index.html');
+  const panel = read('SRC/views/panelPrincipal.html');
+
+  assert.match(login, /<title>Hotel El Silencio del Campo \| Sistema de inventario<\/title>/);
+  assert.match(login, /<strong>Hotel El Silencio del Campo<\/strong>/);
+  assert.match(panel, /<strong>Hotel El Silencio del Campo<\/strong>/);
+});

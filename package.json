@@ -1,6 +1,6 @@
 {
   "name": "sipro",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "SIPRO: inventario de escritorio con Electron y Supabase.",
   "main": "SRC/index.js",
   "scripts": {

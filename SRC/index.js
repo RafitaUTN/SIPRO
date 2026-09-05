@@ -14,10 +14,14 @@ const { exportarProductosExcel } = require('./db/exportExcel');
 const { getAllMovimientos, exportarExcelMovimientos } = require('./db/registroModel');
 
 // 🔹 Importar auto-updater
-const { checkForUpdates } = require('./helpers/autoUpdater');
+const { checkForUpdates, getUpdateStatus, installUpdate } = require('./helpers/autoUpdater');
 
 let mainWindow;
 let currentSession = null;
+let activeOperations = 0;
+let lastUserActivity = Date.now();
+let idleInstallTimer = null;
+const UPDATE_IDLE_MS = 2 * 60 * 1000;
 const exportFolder = path.join(app.getPath('documents'), 'Reportes');
 const generatedExportFiles = new Set();
 
@@ -75,9 +79,9 @@ const verificarConexionInternet = () => {
 };
 const PERMISSIONS = {
   admin: ['usuarios:read', 'usuarios:write', 'productos:read', 'productos:write', 'productos:delete', 'stock:write', 'movimientos:read', 'reportes:read', 'updates:read'],
-  encargado: ['productos:read', 'productos:write', 'stock:write', 'movimientos:read', 'reportes:read'],
-  inventario: ['productos:read', 'productos:write', 'stock:write', 'movimientos:read', 'reportes:read'],
-  consulta: ['productos:read', 'movimientos:read', 'reportes:read']
+  encargado: ['productos:read', 'productos:write', 'stock:write', 'movimientos:read', 'reportes:read', 'updates:read'],
+  inventario: ['productos:read', 'productos:write', 'stock:write', 'movimientos:read', 'reportes:read', 'updates:read'],
+  consulta: ['productos:read', 'movimientos:read', 'reportes:read', 'updates:read']
 };
 const requirePermission = (permission) => {
   if (!currentSession || !currentSession.permisos.includes(permission)) throw new Error('No autorizado');
@@ -93,8 +97,26 @@ const assertTrustedSender = (event) => {
 
 const secureHandle = (channel, handler) => ipcMain.handle(channel, async (event, ...args) => {
   assertTrustedSender(event);
-  return handler(event, ...args);
+  activeOperations += 1;
+  try {
+    return await handler(event, ...args);
+  } finally {
+    activeOperations = Math.max(0, activeOperations - 1);
+  }
 });
+
+const scheduleIdleInstall = () => {
+  lastUserActivity = Date.now();
+  if (idleInstallTimer) clearInterval(idleInstallTimer);
+  idleInstallTimer = setInterval(() => {
+    const windowBusy = !mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoadingMainFrame();
+    if (!windowBusy && activeOperations === 0 && Date.now() - lastUserActivity >= UPDATE_IDLE_MS) {
+      clearInterval(idleInstallTimer);
+      idleInstallTimer = null;
+      installUpdate();
+    }
+  }, 15_000);
+};
 
 secureHandle('auth:login', async (_event, { email, password }) => {
   const user = await usuarioModel.validarLogin(email, password);
@@ -124,6 +146,10 @@ secureHandle('usuarios:create', async (_e, u) => { requirePermission('usuarios:w
 secureHandle('usuarios:update', async (_e, { id, usuario }) => { requirePermission('usuarios:write'); return usuarioModel.updateUsuario(id, usuario); });
 secureHandle('usuarios:delete', async (_e, id) => { requirePermission('usuarios:write'); return usuarioModel.deleteUsuario(id); });
 secureHandle('movimientos:list', async (_event, options) => { requirePermission('movimientos:read'); return getAllMovimientos(options); });
+secureHandle('updates:status', () => { requirePermission('updates:read'); return getUpdateStatus(); });
+secureHandle('updates:install', () => { requirePermission('updates:read'); return installUpdate(); });
+secureHandle('updates:later', () => { requirePermission('updates:read'); scheduleIdleInstall(); return { scheduled: true, idleMinutes: UPDATE_IDLE_MS / 60_000 }; });
+secureHandle('updates:activity', () => { requirePermission('updates:read'); lastUserActivity = Date.now(); return true; });
 
 secureHandle('exportar-inventario', async () => {
   requirePermission('reportes:read');
@@ -192,7 +218,11 @@ if (!squirrelStartup) app.whenReady().then(async () => {
   createMainWindow();
 
   // 🔹 Verificar actualizaciones
-  checkForUpdates();
+  checkForUpdates({
+    onUpdateReady: status => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('updates:ready', status);
+    }
+  });
 });
 
 const isGeneratedExport = (filePath) => typeof filePath === 'string' && generatedExportFiles.has(path.resolve(filePath));

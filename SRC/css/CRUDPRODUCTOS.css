@@ -9,7 +9,6 @@ body {
   justify-content: center;
   align-items: center;
   font-family: 'Segoe UI', sans-serif;
-  animation: fadeIn 1s ease-in;
 }
 
 .stock-bajo { color: red; font-weight: bold; }
@@ -24,7 +23,6 @@ body {
   text-align: center;
   width: 90%;
   max-width: 600px;
-  animation: slideIn 0.8s ease-out;
 }
 
 .table-container {
@@ -53,37 +51,12 @@ p {
 }
 
 
-@keyframes slideIn {
-  from {
-    transform: translateY(-50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
     .container {
       background-color: rgba(255, 255, 255, 0.95);
       padding: 2rem;
       border-radius: 15px;
       box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
       margin-top: 3rem;
-    }
-
-    .btn:hover {
-      transform: scale(1.03);
-      transition: 0.3s;
     }
 
     input[type="search"] {

@@ -7,7 +7,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const host = new URL(process.env.SUPABASE_URL).hostname;
 const localAudit = ['127.0.0.1', 'localhost'].includes(host);
 const allowedRemoteAudit = process.env.SIPRO_ALLOW_REMOTE_AUDIT === '1'
-  && host === 'mopgfccvkfyhccvzxmoe.supabase.co';
+  && host === 'ndrcwqcqtymcjhkcscdp.supabase.co';
 if (!localAudit && !allowedRemoteAudit) {
   throw new Error('cdp-audit solo permite Supabase local o el proyecto SIPRO autorizado explícitamente.');
 }
@@ -31,7 +31,8 @@ async function run() {
     p_codigodebarra: marker,
     p_nombre: `<img src=x onerror="document.body.dataset.auditXss='${marker}'">`,
     p_precio: 1,
-    p_stock: 1,
+    // Stock cero evita crear un movimiento de auditoría que deba limpiarse después.
+    p_stock: 0,
     p_categoria_id: category.data.id,
     p_stock_minimo: 1
   });
@@ -77,7 +78,34 @@ async function run() {
     await waitFor(`typeof window.showView === 'function'`);
     await waitFor(`document.getElementById('totalProductos')?.textContent !== '--'`);
     result.pages.panel = await evaluate(`(() => { const intro = getComputedStyle(document.querySelector('.page-intro p')); const date = getComputedStyle(document.querySelector('.date-label')); return { url: location.href, session: JSON.parse(sessionStorage.getItem('siproSession') || 'null'), products: document.getElementById('totalProductos')?.textContent, users: document.getElementById('totalUsuarios')?.textContent, introFontSize: intro.fontSize, introColor: intro.color, dateFontSize: date.fontSize, dateColor: date.color }; })()`);
-    await evaluate(`window.showView('productos.html')`); await waitFor(`document.querySelectorAll('#tablaProductos tbody tr').length > 0`);
+    result.pages.updateModal = await evaluate(`(async () => {
+      showUpdateModal({ ready: true, version: '1.2.2-prueba' });
+      await new Promise(resolve => setTimeout(resolve, 50));
+      const modal = document.querySelector('.app-modal');
+      const result = {
+        visible: Boolean(modal),
+        logo: modal?.querySelector('.update-brand-logo')?.getAttribute('src'),
+        title: modal?.querySelector('#modalTitle')?.textContent,
+        installButton: modal?.querySelector('[data-modal-submit]')?.textContent,
+        laterButton: modal?.querySelector('[data-modal-close]:not(.modal-close)')?.textContent
+      };
+      modal?.querySelector('[data-modal-close]:not(.modal-close)')?.click();
+      return result;
+    })()`);
+    result.pages.userMessage = await evaluate(`mensajeParaUsuario("Error invoking remote method 'usuarios:create': Error: La contraseña debe tener al menos 12 caracteres.")`);
+    result.pages.firstNavigation = await evaluate(`(async () => {
+      const target = document.getElementById('appContent');
+      let samples = 0;
+      let emptySamples = 0;
+      const sampler = setInterval(() => {
+        samples += 1;
+        if (!target.textContent.trim() && target.children.length === 0) emptySamples += 1;
+      }, 2);
+      await window.showView('productos.html');
+      clearInterval(sampler);
+      return { samples, emptySamples, loadingCleared: !target.classList.contains('is-view-loading') };
+    })()`);
+    await waitFor(`document.querySelectorAll('#tablaProductos tbody tr').length > 0`);
     result.pages.productos = await evaluate(`({ rows: document.querySelectorAll('#tablaProductos tbody tr').length, xssExecuted: document.body.dataset.auditXss === '${marker}' })`);
     await evaluate(`window.showView('usuarios.html')`); await waitFor(`document.querySelectorAll('#tablaUsuarios tbody tr').length > 0`);
     await evaluate(`document.getElementById('newUserButton').click(); mostrarToast('Validación de posición', 'warning');`);
@@ -104,7 +132,13 @@ async function run() {
   const typographyOk = parseFloat(result.pages.panel.introFontSize) >= 16 && parseFloat(result.pages.panel.dateFontSize) >= 15;
   const notificationOk = Number(result.pages.usuarios.notificationLayout.toastZ) > Number(result.pages.usuarios.notificationLayout.modalZ)
     && (result.pages.usuarios.notificationLayout.viewportWidth < 1200 || result.pages.usuarios.notificationLayout.sideBySide);
-  if (result.pages.login.requireType !== 'undefined' || result.pages.productos.xssExecuted || !result.pages.usuarios.userCreated || !typographyOk || !notificationOk || result.rendererErrors.length) {
+  const updateModalOk = result.pages.updateModal.visible
+    && /logo hotel\.png$/.test(result.pages.updateModal.logo || '')
+    && result.pages.updateModal.installButton === 'Instalar ahora'
+    && result.pages.updateModal.laterButton === 'Más tarde';
+  const navigationOk = result.pages.firstNavigation.emptySamples === 0 && result.pages.firstNavigation.loadingCleared;
+  const messageOk = result.pages.userMessage === 'La contraseña debe tener al menos 12 caracteres.';
+  if (result.pages.login.requireType !== 'undefined' || result.pages.productos.xssExecuted || !result.pages.usuarios.userCreated || !typographyOk || !notificationOk || !updateModalOk || !navigationOk || !messageOk || result.rendererErrors.length) {
     throw new Error(`Auditoría Electron falló: ${JSON.stringify(result)}`);
   }
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

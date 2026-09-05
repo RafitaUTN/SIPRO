@@ -11,8 +11,8 @@ Este archivo es la memoria operativa permanente de SIPRO. Debe actualizarse con 
 - Raíz efectiva: `C:\Users\rafad\Music\SIPRO_proyecto_recuperado_COMPLETO\SIPRO_proyecto_recuperado`.
 - Aplicación Electron de inventario del Hotel El Silencio del Campo.
 - Entry point: `SRC/index.js`.
-- Versión actual: `1.2.1`.
-- Base de datos remota solicitada: Supabase `mopgfccvkfyhccvzxmoe`.
+- Versión publicada actual: `1.2.1`; siguiente versión local en preparación: `1.2.2`.
+- Base de datos de producción: Supabase `ndrcwqcqtymcjhkcscdp` (`hotelelsilenciodelcampo`).
 - Repositorio público: `RafitaUTN/SIPRO`.
 - Facturación permanece fuera del alcance porque el código recuperado no tiene un flujo funcional ni reglas fiscales definidas.
 
@@ -121,3 +121,32 @@ npm run make
 ```
 
 La prueba de integración se niega a operar contra URLs remotas. Las operaciones remotas se ejecutan solo después de inspección y dry-run.
+
+## Integración de producción del 5 de septiembre de 2026
+
+- Proyecto confirmado: `ndrcwqcqtymcjhkcscdp`, `hotelelsilenciodelcampo`, PostgreSQL 17.6.1.063 y estado saludable.
+- Antes de escribir se creó `BD_SUPABASE_PRODUCCION/sipro-public-2026-09-05T02-56-52-205Z.json`, 1.641.929 bytes, SHA-256 `ce929cd819270bd003f2ce9be7bf039fb2dfba522faf2349e42cda569e4a5ea5`; contiene el estado actual de las cuatro tablas funcionales y está ignorado por Git.
+- Estado heredado preservado: 16 categorías, 565 productos, 8.934 movimientos y 4 usuarios. Cero duplicados, huérfanos, cantidades inválidas, precios negativos o stock negativo.
+- Se creó en paralelo el esquema seguro `sipro_*` y se copiaron los datos con cero diferencias. Las tablas heredadas no fueron eliminadas, renombradas ni actualizadas.
+- Los cuatro accesos heredados se migraron a Supabase Auth; las contraseñas se convirtieron internamente a bcrypt. El login de las cuatro cuentas fue verificado.
+- `sipro-admin-users` está activo con JWT obligatorio. La creación/eliminación temporal se verificó y dejó cero residuos.
+- La aplicación, el ejecutable empaquetado y `.env` apuntan a producción mediante la clave publicable; la versión local es 1.2.2.
+- GitHub `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` apuntan a producción. Keep-alive manual verde: ejecución `33941152138`.
+- Evidencia: pruebas 11/11, `npm audit` 0 vulnerabilidades, recorrido Electron de desarrollo y empaquetado sin errores, build Squirrel/ZIP correcto, 16/565/8.934/4 después de todas las limpiezas.
+- El workflow diario usa la API autenticada para exportar las cuatro tablas `sipro_*`, valida la línea base, cifra con AES-256 y conserva el artefacto privado durante 14 días. No sustituye un dump completo de PostgreSQL.
+- Los secretos de respaldo están configurados en GitHub. La copia local de `BACKUP_ENCRYPTION_PASSWORD` está en `CREDENCIALES_RESPALDO.md`, excluida de Git.
+
+## Trabajo local posterior a 1.2.1 (aún no publicado)
+
+- Se eliminó el destello blanco de la primera navegación: la vista anterior permanece visible hasta que el HTML, CSS y scripts del siguiente módulo estén preparados; además se usa caché local de vistas.
+- La identidad del login, el título de la ventana y el sidebar muestran el nombre completo “Hotel El Silencio del Campo”.
+- Las validaciones de usuarios, productos y movimientos ahora explican el campo incorrecto. Los prefijos IPC y detalles de Supabase/PostgREST se convierten en mensajes comprensibles antes de mostrarse.
+- La actualización descargada usa un modal propio de SIPRO con el logotipo del hotel. “Más tarde” espera dos minutos sin interacción y sin operaciones IPC activas antes de instalar.
+- Se retiraron animaciones de entrada, transformaciones y desenfoques costosos para mejorar el uso en computadoras antiguas.
+- Se analizó sin exponer datos el respaldo legado del 2 de septiembre de 2026: 16 categorías, 565 productos, 8.773 movimientos y 4 usuarios de aplicación; sin duplicados, huérfanos, cantidades inválidas ni stock negativo.
+- El respaldo contiene `auth`, `storage` y `vault`; está excluido de Git y no debe publicarse. Las contraseñas antiguas no se reutilizarán.
+- Se preparó una migración paralela y reversible hacia `sipro_*`, un validador SQL y un migrador de Auth con simulación obligatoria, confirmación explícita, contraseñas temporales y rollback de usuarios creados en la misma ejecución.
+- Se añadió localmente un workflow diario de respaldo de producción: verifica, cifra con AES-256 y conserva artefactos por 14 días. Todavía no está activo ni subido.
+- Verificación posterior: contrato 10/10, integración Supabase local 3/3, `npm audit` con 0 vulnerabilidades, recorrido Electron sin errores ni instantes vacíos y `npm run make` correcto. La migración SQL también se ensayó en una base temporal: recuentos exactos, cero diferencias y cero huérfanos.
+- Por instrucción del usuario, estos cambios no deben enviarse a GitHub hasta que las pruebas locales y el ensayo aislado de producción queden en verde.
+- La verificación del 5 de septiembre aceptó correctamente un movimiento nuevo realizado durante la prueba manual y confirmó que no disminuyó ningún recuento base del respaldo.

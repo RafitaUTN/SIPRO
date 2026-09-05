@@ -48,7 +48,7 @@ Las pruebas de integración se niegan a ejecutarse si `SUPABASE_URL` no es local
 
 El esquema incluye productos, categorías, perfiles SIPRO y movimientos. La facturación recuperada se mantiene fuera del producto hasta definir reglas fiscales y de negocio.
 
-La versión distribuible lleva únicamente la URL y la clave publicable del proyecto `mopgfccvkfyhccvzxmoe`. Los archivos `.env` se reservan para desarrollo y no pueden cambiar el destino de una aplicación empaquetada.
+La versión distribuible lleva únicamente la URL y la clave publicable del proyecto de producción `ndrcwqcqtymcjhkcscdp`. Los archivos `.env` se reservan para desarrollo y no pueden cambiar el destino de una aplicación empaquetada.
 
 Nunca se debe incluir `SUPABASE_SERVICE_ROLE_KEY` en Electron, Git ni el instalador. El cliente distribuido utiliza únicamente la URL y la clave pública/publishable; RLS es la frontera de autorización.
 

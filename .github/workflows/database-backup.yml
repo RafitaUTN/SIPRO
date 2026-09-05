@@ -1,0 +1,153 @@
+name: Supabase production backup
+
+on:
+  schedule:
+    # 00:17 en Costa Rica (UTC-6), todos los días.
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sipro-production-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: SIPRO data (encrypted)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      SIPRO_BACKUP_EMAIL: ${{ secrets.SIPRO_BACKUP_EMAIL }}
+      SIPRO_BACKUP_PASSWORD: ${{ secrets.SIPRO_BACKUP_PASSWORD }}
+      BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+    steps:
+      - name: Validate protected configuration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$SUPABASE_URL" = 'https://ndrcwqcqtymcjhkcscdp.supabase.co' || { echo '::error::SUPABASE_URL no apunta a la producción autorizada.'; exit 1; }
+          test -n "${SUPABASE_PUBLISHABLE_KEY:-}" || { echo '::error::Falta SUPABASE_PUBLISHABLE_KEY.'; exit 1; }
+          test -n "${SIPRO_BACKUP_EMAIL:-}" || { echo '::error::Falta SIPRO_BACKUP_EMAIL.'; exit 1; }
+          test -n "${SIPRO_BACKUP_PASSWORD:-}" || { echo '::error::Falta SIPRO_BACKUP_PASSWORD.'; exit 1; }
+          test "${#BACKUP_ENCRYPTION_PASSWORD}" -ge 32 || { echo '::error::BACKUP_ENCRYPTION_PASSWORD debe tener al menos 32 caracteres.'; exit 1; }
+
+      - name: Export, validate and encrypt SIPRO data
+        id: backup
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          started_at="$(date +%s)"
+          backup_dir="${RUNNER_TEMP}/sipro-db-backup"
+          archive="${RUNNER_TEMP}/sipro-db-backup-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.tar.gz"
+          encrypted_archive="${archive}.gpg"
+          verification_archive="${RUNNER_TEMP}/verified.tar.gz"
+          mkdir -p "$backup_dir"
+
+          login_file="${RUNNER_TEMP}/sipro-login.json"
+          curl --fail-with-body --silent --show-error --retry 3 --max-time 30 \
+            --request POST \
+            --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -cn --arg email "$SIPRO_BACKUP_EMAIL" --arg password "$SIPRO_BACKUP_PASSWORD" '{email:$email,password:$password}')" \
+            --output "$login_file" \
+            "$SUPABASE_URL/auth/v1/token?grant_type=password"
+          access_token="$(jq -er '.access_token' "$login_file")"
+          echo "::add-mask::$access_token"
+          rm -f "$login_file"
+
+          export_table() {
+            local table="$1"
+            local output="$backup_dir/$table.json"
+            local page_file="${RUNNER_TEMP}/${table}-page.json"
+            local merged_file="${RUNNER_TEMP}/${table}-merged.json"
+            local offset=0
+            local page_size=1000
+            local rows
+            printf '[]' > "$output"
+            while true; do
+              curl --fail-with-body --silent --show-error --retry 3 --max-time 60 \
+                --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+                --header "Authorization: Bearer $access_token" \
+                --output "$page_file" \
+                "$SUPABASE_URL/rest/v1/$table?select=*&order=id.asc&offset=$offset&limit=$page_size"
+              jq -e 'type == "array"' "$page_file" >/dev/null
+              rows="$(jq 'length' "$page_file")"
+              jq -s '.[0] + .[1]' "$output" "$page_file" > "$merged_file"
+              mv "$merged_file" "$output"
+              if (( rows < page_size )); then break; fi
+              offset=$((offset + rows))
+            done
+            rm -f "$page_file"
+          }
+
+          for table in sipro_categorias sipro_productos sipro_movimientos_stock sipro_usuarios; do
+            export_table "$table"
+          done
+
+          categorias="$(jq 'length' "$backup_dir/sipro_categorias.json")"
+          productos="$(jq 'length' "$backup_dir/sipro_productos.json")"
+          movimientos="$(jq 'length' "$backup_dir/sipro_movimientos_stock.json")"
+          usuarios="$(jq 'length' "$backup_dir/sipro_usuarios.json")"
+          (( categorias >= 16 )) || { echo '::error::El respaldo perdió categorías respecto a la línea base.'; exit 1; }
+          (( productos >= 565 )) || { echo '::error::El respaldo perdió productos respecto a la línea base.'; exit 1; }
+          (( movimientos >= 8934 )) || { echo '::error::El respaldo perdió movimientos respecto a la línea base.'; exit 1; }
+          (( usuarios >= 4 )) || { echo '::error::El respaldo perdió usuarios respecto a la línea base.'; exit 1; }
+
+          (cd "$backup_dir" && sha256sum sipro_*.json > SHA256SUMS)
+          {
+            echo "created_at_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo "commit_sha=${GITHUB_SHA}"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo 'backup_type=sipro-data-api-encrypted'
+            echo "sipro_categorias=$categorias"
+            echo "sipro_productos=$productos"
+            echo "sipro_movimientos_stock=$movimientos"
+            echo "sipro_usuarios=$usuarios"
+          } > "$backup_dir/manifest.txt"
+
+          tar -C "$backup_dir" -czf "$archive" sipro_*.json SHA256SUMS manifest.txt
+          gzip -t "$archive"
+          printf '%s' "$BACKUP_ENCRYPTION_PASSWORD" | gpg --batch --yes --symmetric --cipher-algo AES256 \
+            --pinentry-mode loopback --passphrase-fd 0 --output "$encrypted_archive" "$archive"
+          printf '%s' "$BACKUP_ENCRYPTION_PASSWORD" | gpg --batch --yes --decrypt --pinentry-mode loopback \
+            --passphrase-fd 0 --output "$verification_archive" "$encrypted_archive"
+          gzip -t "$verification_archive"
+          tar -tzf "$verification_archive" >/dev/null
+          test -s "$encrypted_archive"
+
+          rm -f "$archive" "$verification_archive"
+          rm -rf "$backup_dir"
+          duration_seconds="$(( $(date +%s) - started_at ))"
+          echo "archive=$encrypted_archive" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=sipro-production-backup-$(date -u +'%Y-%m-%d')-run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "archive_bytes=$(stat -c%s "$encrypted_archive")" >> "$GITHUB_OUTPUT"
+          echo "duration_seconds=$duration_seconds" >> "$GITHUB_OUTPUT"
+          echo "counts=$categorias/$productos/$movimientos/$usuarios" >> "$GITHUB_OUTPUT"
+
+      - name: Upload encrypted private artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.backup.outputs.artifact_name }}
+          path: ${{ steps.backup.outputs.archive }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Backup summary
+        shell: bash
+        run: |
+          {
+            echo '### Respaldo lógico de producción de SIPRO'
+            echo '- Datos de las cuatro tablas SIPRO: verificados'
+            echo '- Cifrado AES-256 mediante GPG: verificado'
+            echo '- Solo el archivo cifrado se cargó como artefacto'
+            echo '- Retención automática: 14 días'
+            echo '- Filas (categorías/productos/movimientos/usuarios): ${{ steps.backup.outputs.counts }}'
+            echo '- Tamaño cifrado: ${{ steps.backup.outputs.archive_bytes }} bytes'
+            echo '- Duración: ${{ steps.backup.outputs.duration_seconds }} segundos'
+          } >> "$GITHUB_STEP_SUMMARY"
