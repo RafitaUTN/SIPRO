@@ -39,9 +39,8 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
   }
 });
 
-document.getElementById('togglePassword').addEventListener('click', () => {
-  const field = document.getElementById('password');
-  field.type = field.type === 'password' ? 'text' : 'password';
-});
-
+SiproPasswordVisibility.attach(
+  document.getElementById('togglePassword'),
+  document.getElementById('password')
+);
 window.lucide?.createIcons();

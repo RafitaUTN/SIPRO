@@ -73,13 +73,26 @@ async function run() {
     };
     await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
     await send('Page.navigate', { url: new URL('index.html', target.url).href }); await sleep(1000);
-    result.pages.login = await evaluate(`({ requireType: typeof require, electronApiType: typeof window.electronAPI, formPresent: Boolean(document.getElementById('loginForm')) })`);
+    result.pages.login = await evaluate(`(() => {
+      const field = document.getElementById('password');
+      const toggle = document.getElementById('togglePassword');
+      field.value = 'Visibilidad-Login-2026';
+      toggle.click();
+      const visible = field.type === 'text' && field.value === 'Visibilidad-Login-2026' && toggle.getAttribute('aria-label') === 'Ocultar contraseña';
+      toggle.click();
+      return {
+        requireType: typeof require,
+        electronApiType: typeof window.electronAPI,
+        formPresent: Boolean(document.getElementById('loginForm')),
+        passwordToggle: { visible, hidden: field.type === 'password', valuePreserved: field.value === 'Visibilidad-Login-2026' }
+      };
+    })()`);
     await evaluate(`(() => { document.getElementById('email').value=${JSON.stringify(auditEmail)}; document.getElementById('password').value=${JSON.stringify(auditPassword)}; document.getElementById('loginForm').requestSubmit(); return true; })()`);
     await waitFor(`typeof window.showView === 'function'`);
     await waitFor(`document.getElementById('totalProductos')?.textContent !== '--'`);
     result.pages.panel = await evaluate(`(() => { const intro = getComputedStyle(document.querySelector('.page-intro p')); const date = getComputedStyle(document.querySelector('.date-label')); return { url: location.href, session: JSON.parse(sessionStorage.getItem('siproSession') || 'null'), products: document.getElementById('totalProductos')?.textContent, users: document.getElementById('totalUsuarios')?.textContent, introFontSize: intro.fontSize, introColor: intro.color, dateFontSize: date.fontSize, dateColor: date.color }; })()`);
     result.pages.updateModal = await evaluate(`(async () => {
-      showUpdateModal({ ready: true, version: '1.2.2-prueba' });
+      showUpdateModal({ ready: true, version: '1.2.3-prueba' });
       await new Promise(resolve => setTimeout(resolve, 50));
       const modal = document.querySelector('.app-modal');
       const result = {
@@ -111,12 +124,41 @@ async function run() {
     await evaluate(`document.getElementById('newUserButton').click(); mostrarToast('Validación de posición', 'warning');`);
     await waitFor(`Boolean(document.querySelector('.app-modal') && document.querySelector('.toast'))`);
     const notificationLayout = await evaluate(`(() => { const modal = document.querySelector('.app-modal').getBoundingClientRect(); const toast = document.querySelector('.toast-container').getBoundingClientRect(); return { modalZ: getComputedStyle(document.querySelector('.modal-overlay')).zIndex, toastZ: getComputedStyle(document.querySelector('.toast-container')).zIndex, sideBySide: toast.right <= modal.left || toast.left >= modal.right, viewportWidth: innerWidth }; })()`);
+    const createPasswordVisibility = await evaluate(`(() => {
+      const field = document.getElementById('passwordUsuario');
+      const toggle = document.getElementById('togglePasswordUsuario');
+      const initial = { empty: field.value === '', required: field.required, placeholder: field.placeholder };
+      field.value = 'Visibilidad-Creación-2026';
+      toggle.click();
+      const visible = field.type === 'text' && field.value === 'Visibilidad-Creación-2026';
+      toggle.click();
+      return { initial, visible, hidden: field.type === 'password', valuePreserved: field.value === 'Visibilidad-Creación-2026' };
+    })()`);
     await evaluate(`(() => { document.getElementById('nombreUsuario').value='Usuario temporal UI'; document.getElementById('emailUsuario').value=${JSON.stringify(uiUserEmail)}; document.getElementById('passwordUsuario').value='Temporal!Sipro-UI-2026'; document.getElementById('rolUsuario').value='consulta'; document.getElementById('formUsuario').requestSubmit(); return true; })()`);
     await waitFor(`!document.querySelector('.app-modal') && document.body.textContent.includes(${JSON.stringify(uiUserEmail)})`);
     const createdProfile = await supabase.from('sipro_usuarios').select('id').eq('email', uiUserEmail).single();
     if (createdProfile.error) throw createdProfile.error;
     temporaryUserId = createdProfile.data.id;
-    result.pages.usuarios = await evaluate(`({ rows: document.querySelectorAll('#tablaUsuarios tbody tr').length, userCreated: document.body.textContent.includes(${JSON.stringify(uiUserEmail)}), notificationLayout: ${JSON.stringify(notificationLayout)} })`);
+    await evaluate(`window.editarUsuario(${JSON.stringify(temporaryUserId)})`);
+    await waitFor(`Boolean(document.querySelector('.app-modal') && document.getElementById('passwordUsuario'))`);
+    const editPasswordVisibility = await evaluate(`(() => {
+      const field = document.getElementById('passwordUsuario');
+      const toggle = document.getElementById('togglePasswordUsuario');
+      const initial = {
+        empty: field.value === '',
+        required: field.required,
+        label: document.getElementById('passwordUsuarioLabel').textContent,
+        placeholder: field.placeholder
+      };
+      field.value = 'Nueva-Contraseña-Visible-2026';
+      toggle.click();
+      const visible = field.type === 'text' && field.value === 'Nueva-Contraseña-Visible-2026';
+      toggle.click();
+      const result = { initial, visible, hidden: field.type === 'password', valuePreserved: field.value === 'Nueva-Contraseña-Visible-2026' };
+      SiproUI.closeModal();
+      return result;
+    })()`);
+    result.pages.usuarios = await evaluate(`({ rows: document.querySelectorAll('#tablaUsuarios tbody tr').length, userCreated: document.body.textContent.includes(${JSON.stringify(uiUserEmail)}), notificationLayout: ${JSON.stringify(notificationLayout)}, createPasswordVisibility: ${JSON.stringify(createPasswordVisibility)}, editPasswordVisibility: ${JSON.stringify(editPasswordVisibility)} })`);
     await evaluate(`window.showView('registro.html')`); await waitFor(`document.querySelectorAll('#tablaMovimientos tbody tr').length > 0`);
     result.pages.movimientos = await evaluate(`({ rows: document.querySelectorAll('#tablaMovimientos tbody tr').length })`);
   } finally {
@@ -138,7 +180,17 @@ async function run() {
     && result.pages.updateModal.laterButton === 'Más tarde';
   const navigationOk = result.pages.firstNavigation.emptySamples === 0 && result.pages.firstNavigation.loadingCleared;
   const messageOk = result.pages.userMessage === 'La contraseña debe tener al menos 12 caracteres.';
-  if (result.pages.login.requireType !== 'undefined' || result.pages.productos.xssExecuted || !result.pages.usuarios.userCreated || !typographyOk || !notificationOk || !updateModalOk || !navigationOk || !messageOk || result.rendererErrors.length) {
+  const loginPasswordOk = Object.values(result.pages.login.passwordToggle).every(Boolean);
+  const createPassword = result.pages.usuarios.createPasswordVisibility;
+  const editPassword = result.pages.usuarios.editPasswordVisibility;
+  const userPasswordsOk = createPassword.initial.empty && createPassword.initial.required
+    && /12/.test(createPassword.initial.placeholder)
+    && createPassword.visible && createPassword.hidden && createPassword.valuePreserved
+    && editPassword.initial.empty && !editPassword.initial.required
+    && editPassword.initial.label === 'Nueva contraseña (opcional)'
+    && /conservar la actual/i.test(editPassword.initial.placeholder)
+    && editPassword.visible && editPassword.hidden && editPassword.valuePreserved;
+  if (result.pages.login.requireType !== 'undefined' || result.pages.productos.xssExecuted || !result.pages.usuarios.userCreated || !loginPasswordOk || !userPasswordsOk || !typographyOk || !notificationOk || !updateModalOk || !navigationOk || !messageOk || result.rendererErrors.length) {
     throw new Error(`Auditoría Electron falló: ${JSON.stringify(result)}`);
   }
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

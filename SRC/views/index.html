@@ -51,10 +51,19 @@
       right: 14px;
       top: 70%;
       transform: translateY(-50%);
+      display: grid;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      place-items: center;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
       cursor: pointer;
       color: #888;
-      font-size: 1.1rem;
     }
+    .password-toggle:hover, .password-toggle:focus-visible { background:#edf2ef; color:#19483b; outline:2px solid transparent; }
+    .password-toggle svg { width:19px; height:19px; }
     .position-relative { position: relative; }
     .login-identity { margin-bottom: 1.5rem; }
     .login-identity img { width: 82px; height: 82px; object-fit: contain; display: block; margin: 0 auto 0.75rem; }
@@ -77,7 +86,7 @@
       <div class="mb-3 position-relative">
         <label for="password" class="form-label">Contraseña</label>
         <input type="password" class="form-control" id="password" placeholder="Contraseña" required style="padding-right:40px;">
-        <i data-lucide="eye-off" class="password-toggle" id="togglePassword" aria-hidden="true"></i>
+        <button type="button" class="password-toggle" id="togglePassword" aria-label="Mostrar contraseña" aria-pressed="false"><i data-lucide="eye" aria-hidden="true"></i></button>
       </div>
       <button type="submit" class="btn btn-primary w-100 mt-3"><i data-lucide="log-in" aria-hidden="true"></i> Ingresar</button>
     </form>
@@ -93,6 +102,7 @@
 
   <script src="../../node_modules/lucide/dist/umd/lucide.min.js"></script>
   <script src="../js/vendor/bootstrap.js"></script>
+  <script src="../js/passwordVisibility.js"></script>
   <script src="../js/login.js"></script>
 </body>
 </html>

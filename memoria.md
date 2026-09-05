@@ -11,7 +11,7 @@ Este archivo es la memoria operativa permanente de SIPRO. Debe actualizarse con 
 - Raíz efectiva: `C:\Users\rafad\Music\SIPRO_proyecto_recuperado_COMPLETO\SIPRO_proyecto_recuperado`.
 - Aplicación Electron de inventario del Hotel El Silencio del Campo.
 - Entry point: `SRC/index.js`.
-- Versión publicada actual: `1.2.2`.
+- Versión publicada actual: `1.2.2`; siguiente versión local en preparación: `1.2.3`.
 - Base de datos de producción: Supabase `ndrcwqcqtymcjhkcscdp` (`hotelelsilenciodelcampo`).
 - Repositorio público: `RafitaUTN/SIPRO`.
 - Facturación permanece fuera del alcance porque el código recuperado no tiene un flujo funcional ni reglas fiscales definidas.
@@ -150,3 +150,13 @@ La prueba de integración se niega a operar contra URLs remotas. Las operaciones
 - Verificación posterior: contrato 12/12, `npm audit` con 0 vulnerabilidades, recorrido Electron sin errores ni instantes vacíos y `npm run make` correcto. La migración SQL también se ensayó en una base temporal: recuentos exactos, cero diferencias y cero huérfanos.
 - Release público `v1.2.2` generado por GitHub Actions en la ejecución `33971328948`; instalador, paquete Squirrel y ZIP cargados correctamente.
 - La verificación del 5 de septiembre aceptó correctamente un movimiento nuevo realizado durante la prueba manual y confirmó que no disminuyó ningún recuento base del respaldo.
+
+## Corrección de visibilidad de contraseñas para 1.2.3
+
+- Causa del fallo: Lucide reemplazaba el elemento que tenía registrado el evento de clic, dejando el icono visible pero sin listener.
+- Se creó un control compartido que conserva un botón estable, alterna `password`/`text`, actualiza icono y atributos accesibles, y mantiene intacto el valor escrito.
+- El login permite mostrar y ocultar la contraseña ingresada.
+- Crear usuario incorpora el mismo control y exige una contraseña inicial de al menos 12 caracteres.
+- Editar usuario mantiene el campo vacío, nunca intenta recuperar la contraseña actual y permite visualizar únicamente la nueva contraseña escrita en ese momento.
+- Verificación: contrato 13/13, `npm audit` con 0 vulnerabilidades, build Squirrel/ZIP correcto y recorridos Electron de desarrollo y empaquetado sin errores. Ambas pruebas comprobaron visible, oculto y conservación del texto en login, creación y edición.
+- La prueba contra producción eliminó sus usuarios y productos temporales; el estado final confirmó 16 categorías, 565 productos, 8.935 movimientos preservados y 4 usuarios.

@@ -118,10 +118,10 @@ test('el respaldo programado cifra datos y la migración nunca sobrescribe el le
   assert.match(ignore, /CREDENCIALES_PRODUCCION\.md/);
 });
 
-test('la distribución 1.2.2 apunta únicamente al proyecto de producción autorizado', () => {
+test('la distribución 1.2.3 apunta únicamente al proyecto de producción autorizado', () => {
   const env = read('SRC/helpers/loadEnv.js');
   const pkg = JSON.parse(read('package.json'));
-  assert.equal(pkg.version, '1.2.2');
+  assert.equal(pkg.version, '1.2.3');
   assert.match(env, /ndrcwqcqtymcjhkcscdp\.supabase\.co/);
   assert.match(env, /sb_publishable_/);
   assert.doesNotMatch(env, /mopgfccvkfyhccvzxmoe/);
@@ -135,4 +135,21 @@ test('la identidad visual muestra el nombre completo del hotel', () => {
   assert.match(login, /<title>Hotel El Silencio del Campo \| Sistema de inventario<\/title>/);
   assert.match(login, /<strong>Hotel El Silencio del Campo<\/strong>/);
   assert.match(panel, /<strong>Hotel El Silencio del Campo<\/strong>/);
+});
+
+test('los controles de contraseña conservan el botón al reemplazar los iconos', () => {
+  const login = read('SRC/views/index.html');
+  const loginScript = read('SRC/js/login.js');
+  const users = read('SRC/js/CRUDUSUARIO.JS');
+  const visibility = read('SRC/js/passwordVisibility.js');
+
+  assert.match(login, /<button type="button" class="password-toggle" id="togglePassword"/);
+  assert.match(loginScript, /SiproPasswordVisibility\.attach/);
+  assert.match(users, /id="togglePasswordUsuario"/);
+  assert.match(users, /fields\.password\.value = ''/);
+  assert.match(users, /Nueva contraseña \(opcional\)/);
+  assert.match(users, /Dejar vacío para conservar la actual/);
+  assert.match(visibility, /button\.replaceChildren\(icon\)/);
+  assert.match(visibility, /field\.type = visible \? 'text' : 'password'/);
+  assert.doesNotMatch(users, /fields\.password\.value\s*=\s*usuario/);
 });
