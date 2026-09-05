@@ -11,7 +11,7 @@ Este archivo es la memoria operativa permanente de SIPRO. Debe actualizarse con 
 - Raíz efectiva: `C:\Users\rafad\Music\SIPRO_proyecto_recuperado_COMPLETO\SIPRO_proyecto_recuperado`.
 - Aplicación Electron de inventario del Hotel El Silencio del Campo.
 - Entry point: `SRC/index.js`.
-- Versión publicada actual: `1.2.2`; siguiente versión local en preparación: `1.2.3`.
+- Versión publicada actual: `1.2.3`.
 - Base de datos de producción: Supabase `ndrcwqcqtymcjhkcscdp` (`hotelelsilenciodelcampo`).
 - Repositorio público: `RafitaUTN/SIPRO`.
 - Facturación permanece fuera del alcance porque el código recuperado no tiene un flujo funcional ni reglas fiscales definidas.
@@ -130,7 +130,7 @@ La prueba de integración se niega a operar contra URLs remotas. Las operaciones
 - Se creó en paralelo el esquema seguro `sipro_*` y se copiaron los datos con cero diferencias. Las tablas heredadas no fueron eliminadas, renombradas ni actualizadas.
 - Los cuatro accesos heredados se migraron a Supabase Auth; las contraseñas se convirtieron internamente a bcrypt. El login de las cuatro cuentas fue verificado.
 - `sipro-admin-users` está activo con JWT obligatorio. La creación/eliminación temporal se verificó y dejó cero residuos.
-- La aplicación, el ejecutable empaquetado y `.env` apuntan a producción mediante la clave publicable; la versión local es 1.2.2.
+- La aplicación, el ejecutable empaquetado y `.env` apuntan a producción mediante la clave publicable; la versión publicada es 1.2.3.
 - GitHub `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` apuntan a producción. Keep-alive manual verde: ejecución `33971224377`.
 - Evidencia: pruebas 12/12, `npm audit` 0 vulnerabilidades, recorrido Electron de desarrollo y empaquetado sin errores, build Squirrel/ZIP correcto y línea base de producción preservada.
 - El workflow diario usa la API autenticada para exportar las cuatro tablas `sipro_*`, valida la línea base, cifra con AES-256 y conserva el artefacto privado durante 14 días. No sustituye un dump completo de PostgreSQL.
@@ -160,3 +160,6 @@ La prueba de integración se niega a operar contra URLs remotas. Las operaciones
 - Editar usuario mantiene el campo vacío, nunca intenta recuperar la contraseña actual y permite visualizar únicamente la nueva contraseña escrita en ese momento.
 - Verificación: contrato 13/13, `npm audit` con 0 vulnerabilidades, build Squirrel/ZIP correcto y recorridos Electron de desarrollo y empaquetado sin errores. Ambas pruebas comprobaron visible, oculto y conservación del texto en login, creación y edición.
 - La prueba contra producción eliminó sus usuarios y productos temporales; el estado final confirmó 16 categorías, 565 productos, 8.935 movimientos preservados y 4 usuarios.
+- Commit funcional publicado: `9718ceb` (`fix: habilitar visibilidad segura de contraseñas`).
+- Respaldo cifrado y keep-alive del mismo commit finalizados en verde: ejecuciones `33973799903` y `33973801281`.
+- Release público `v1.2.3` generado por GitHub Actions en la ejecución `33973823219`; `RELEASES`, paquete Squirrel, instalador y ZIP fueron cargados correctamente.
